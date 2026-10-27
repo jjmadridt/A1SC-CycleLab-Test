@@ -3,198 +3,309 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#101820">
-<title>A1SC CycleLab</title>
+<title>A1SC CycleLab 0.2</title>
 <style>
-:root{font-family:Arial,Helvetica,sans-serif;color:#f6fbfd;background:#101820}
 *{box-sizing:border-box}
-body{margin:0}
-.app{max-width:520px;margin:auto;padding:18px 16px 100px}
-.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
-.brand{color:#55d6c2;font-weight:800;letter-spacing:1.3px}
-.sub{font-size:12px;color:#9aabb5;margin-top:5px}
-.status{font-size:12px;border:1px solid #55717a;border-radius:20px;padding:7px 11px;color:#b5c8cf}
-h1{font-size:23px;margin:0 0 18px}
-.speed{background:#1d2b36;border-radius:18px;padding:24px;text-align:center;margin-bottom:12px}
-.label{font-size:12px;color:#aabbc5;letter-spacing:.8px;font-weight:700}
-.big{font-size:78px;font-weight:750;line-height:1.15;font-variant-numeric:tabular-nums}
-.unit{color:#aabbc5;font-size:16px}
+body{margin:0;background:#101820;color:#fff;font-family:Arial,sans-serif}
+.app{max-width:520px;margin:auto;padding:18px 16px 105px}
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.brand{color:#55d6c2;font-weight:800;letter-spacing:1px}
+.sub,.label,.note{color:#aabbc5;font-size:12px}
+.sub{margin-top:5px}
+.status{font-size:11px;border:1px solid #52646e;border-radius:20px;padding:8px}
+h1{font-size:23px}
+.speed,.metric{background:#1d2b36;border-radius:16px;padding:18px}
+.speed{text-align:center;margin-bottom:12px}
+.big{font-size:76px;font-weight:800;font-variant-numeric:tabular-nums}
+.unit{color:#aabbc5}
 .metrics{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.metric{background:#1d2b36;border-radius:15px;padding:18px 14px;min-height:115px}
-.value{font-size:29px;font-weight:750;margin-top:12px;font-variant-numeric:tabular-nums}
+.metric{min-height:112px}
+.label{font-weight:700;letter-spacing:.5px}
+.value{font-size:28px;font-weight:750;margin-top:14px;font-variant-numeric:tabular-nums}
 .smallunit{font-size:13px;color:#aabbc5}
-.secondary{margin:16px 0;padding:13px 15px;border:1px solid #354955;border-radius:12px;display:flex;justify-content:space-between;color:#b4c4cb;font-size:14px}
-.controls{display:flex;gap:12px}
-.controls button{flex:1;border:0;border-radius:13px;padding:17px 12px;font-size:16px;font-weight:700;cursor:pointer}
+.secondary{display:flex;justify-content:space-between;padding:15px;margin:14px 0;border:1px solid #354955;border-radius:12px;font-size:14px}
+.controls{display:flex;gap:10px}
+button{cursor:pointer}
+.controls button{flex:1;border:0;border-radius:12px;padding:16px;font-size:16px;font-weight:700}
 .primary{background:#55d6c2;color:#102326}
-.danger{background:#5a2931;color:#fff}
-.muted{background:#30424c;color:#fff}
-.note{font-size:12px;line-height:1.5;color:#9aabb5;margin-top:16px}
-.nav{position:fixed;bottom:0;left:0;right:0;background:#17242d;border-top:1px solid #344650;display:flex;justify-content:center;padding:9px 5px max(12px,env(safe-area-inset-bottom))}
-.navinner{width:min(520px,100%);display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
-.nav button{background:transparent;color:#aabbc5;border:0;border-radius:10px;padding:10px 4px;font-size:13px;cursor:pointer}
-.nav button.active{background:#29443f;color:#55d6c2;font-weight:700}
-.panel{background:#1d2b36;border-radius:16px;padding:20px;line-height:1.6;color:#c6d3d9}
+.danger{background:#63313a;color:#fff}
+button:disabled{opacity:.4}
+.note{line-height:1.5}
+.panel{background:#1d2b36;padding:20px;border-radius:15px;line-height:1.6}
 .hidden{display:none}
+.nav{position:fixed;bottom:0;left:0;right:0;background:#17242d;border-top:1px solid #344650;padding:10px}
+.navinner{max-width:520px;margin:auto;display:grid;grid-template-columns:repeat(4,1fr)}
+.nav button{background:none;border:0;color:#aabbc5;padding:12px 4px}
+.nav button.active{background:#29443f;color:#55d6c2;border-radius:10px;font-weight:700}
 </style>
 </head>
 <body>
 <main class="app">
-<header class="top">
-  <div>
-    <div class="brand">A1SC / CYCLELAB</div>
-    <div class="sub">CYCLING COMPUTER · TEST</div>
-  </div>
-  <span class="status" id="status">READY</span>
+<header>
+<div>
+<div class="brand">A1SC / CYCLELAB</div>
+<div class="sub">LIVE GPS · VERSION 0.2</div>
+</div>
+<span class="status" id="status">READY</span>
 </header>
 
 <section id="ride">
-  <h1>Ride Dashboard</h1>
-  <div class="speed">
-    <div class="label">CURRENT SPEED</div>
-    <div class="big">0.0</div>
-    <div class="unit">km/h</div>
-  </div>
-  <div class="metrics">
-    <div class="metric">
-      <div class="label">AVERAGE SPEED</div>
-      <div class="value">0.0 <span class="smallunit">km/h</span></div>
-    </div>
-    <div class="metric">
-      <div class="label">RIDING TIME</div>
-      <div class="value" id="ridingTime">00:00:00</div>
-    </div>
-    <div class="metric">
-      <div class="label">ELEVATION GAIN</div>
-      <div class="value">0 <span class="smallunit">m</span></div>
-    </div>
-    <div class="metric">
-      <div class="label">DISTANCE</div>
-      <div class="value">0.0 <span class="smallunit">km</span></div>
-    </div>
-  </div>
-  <div class="secondary">
-    <span>Total elapsed time</span>
-    <strong id="elapsedTime">00:00:00</strong>
-  </div>
-  <div class="controls">
-    <button class="primary" id="startPause">Start Ride</button>
-    <button class="danger" id="finish" disabled>Finish</button>
-  </div>
-  <p class="note">
-    Interface prototype only. No GPS or automatic stop detection
-    is active yet. Riding time is a manual-control demonstration;
-    elapsed time includes pauses.
-  </p>
+<h1>Ride Dashboard</h1>
+<div class="speed">
+<div class="label">CURRENT SPEED</div>
+<div class="big" id="speed">0.0</div>
+<div class="unit">km/h</div>
+</div>
+<div class="metrics">
+<div class="metric">
+<div class="label">AVERAGE SPEED</div>
+<div class="value"><span id="average">0.0</span> <span class="smallunit">km/h</span></div>
+</div>
+<div class="metric">
+<div class="label">RIDING TIME</div>
+<div class="value" id="ridingTime">00:00:00</div>
+</div>
+<div class="metric">
+<div class="label">ELEVATION GAIN</div>
+<div class="value"><span id="elevation">0</span> <span class="smallunit">m</span></div>
+</div>
+<div class="metric">
+<div class="label">DISTANCE</div>
+<div class="value"><span id="distance">0.00</span> <span class="smallunit">km</span></div>
+</div>
+</div>
+<div class="secondary">
+<span>Total elapsed time</span>
+<strong id="elapsedTime">00:00:00</strong>
+</div>
+<div class="secondary">
+<span>GPS accuracy</span>
+<strong id="accuracy">Waiting</strong>
+</div>
+<div class="controls">
+<button class="primary" id="control">Start Ride</button>
+<button class="danger" id="finish" disabled>Finish</button>
+</div>
+<p class="note" id="message">
+GPS is inactive. Start a ride to request location access.
+</p>
+<p class="note">
+Testing only. Keep Chrome open and screen on.
+Elevation gain is experimental. No ride history is saved yet.
+</p>
 </section>
 
 <section id="history" class="hidden">
-  <h1>Ride History</h1>
-  <div class="panel">
-    Map-based ride history will show one selected GPS route at a time.
-    Recorded and imported rides will appear here.
-  </div>
+<h1>Ride History</h1>
+<div class="panel">Map-based ride history is planned for the next development stages.</div>
 </section>
-
 <section id="partner" class="hidden">
-  <h1>Virtual Partner</h1>
-  <div class="panel">
-    Dedicated route map planned with two moving cyclist markers:
-    turquoise for today and orange for a manually selected previous
-    ride. The map will follow today's position.
-  </div>
+<h1>Virtual Partner</h1>
+<div class="panel">Two moving cyclist markers, comparing today's ride against a manually selected previous ride.</div>
 </section>
-
 <section id="return" class="hidden">
-  <h1>Return to Origin</h1>
-  <div class="panel">
-    Navigation back to the ride's starting point is planned.
-    Route guidance is not active in this prototype.
-  </div>
+<h1>Return to Origin</h1>
+<div class="panel">Return navigation will be added after reliable GPS route recording.</div>
 </section>
 </main>
 
 <nav class="nav">
-  <div class="navinner">
-    <button class="active" data-page="ride">Ride</button>
-    <button data-page="history">History</button>
-    <button data-page="partner">Partner</button>
-    <button data-page="return">Return</button>
-  </div>
+<div class="navinner">
+<button class="active" data-page="ride">Ride</button>
+<button data-page="history">History</button>
+<button data-page="partner">Partner</button>
+<button data-page="return">Return</button>
+</div>
 </nav>
 
 <script>
-let state='ready', startedAt=0, segmentStart=0, ridingMs=0, elapsedMs=0;
+const $=id=>document.getElementById(id);
+let state="ready",watchId=null;
+let startTime=0,endTime=0;
+let movingMs=0,lastTick=0,lastFix=null,lastFixAt=0;
+let distanceM=0,gainM=0,altitude=null;
+let moving=false,stillSince=0,movingSince=0;
+let lastSpeed=0,gpsAvailable=false;
 
 const fmt=ms=>{
-  const s=Math.floor(ms/1000);
-  return [Math.floor(s/3600),Math.floor(s/60)%60,s%60]
-    .map(n=>String(n).padStart(2,'0')).join(':');
+ const s=Math.floor(ms/1000);
+ return [Math.floor(s/3600),Math.floor(s/60)%60,s%60]
+ .map(x=>String(x).padStart(2,"0")).join(":");
 };
 
-const status=document.getElementById('status');
-const control=document.getElementById('startPause');
-const finish=document.getElementById('finish');
+function meters(a,b){
+ const R=6371000,rad=Math.PI/180;
+ const dLat=(b.latitude-a.latitude)*rad;
+ const dLon=(b.longitude-a.longitude)*rad;
+ const x=Math.sin(dLat/2)**2+
+ Math.cos(a.latitude*rad)*Math.cos(b.latitude*rad)*
+ Math.sin(dLon/2)**2;
+ return 2*R*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));
+}
 
-function update(){
-  const now=Date.now();
-  const riding=ridingMs+(state==='riding'?now-segmentStart:0);
-  const elapsed=state==='ready'?0:state==='finished'
-    ?elapsedMs:now-startedAt;
-  document.getElementById('ridingTime').textContent=fmt(riding);
-  document.getElementById('elapsedTime').textContent=fmt(elapsed);
+function stopGPS(){
+ if(watchId!==null){
+  navigator.geolocation.clearWatch(watchId);
+  watchId=null;
+ }
+}
+
+function reset(){
+ movingMs=0;distanceM=0;gainM=0;
+ lastFix=null;lastFixAt=0;altitude=null;
+ moving=false;stillSince=0;movingSince=0;
+ lastSpeed=0;gpsAvailable=false;
+ $("speed").textContent="0.0";
+ $("accuracy").textContent="Waiting";
+}
+
+function gpsSuccess(pos){
+ if(state!=="riding")return;
+ const c=pos.coords,t=pos.timestamp;
+ const accuracy=c.accuracy;
+ $("accuracy").textContent=Math.round(accuracy)+" m";
+
+ if(accuracy>35){
+  $("message").textContent="GPS accuracy is low. Waiting for a better fix.";
+  return;
+ }
+
+ gpsAvailable=true;
+ const dt=lastFixAt?(t-lastFixAt)/1000:0;
+ const step=lastFix?meters(lastFix,c):0;
+ let speed=Number.isFinite(c.speed)&&c.speed>=0?c.speed:
+  dt>0?step/dt:0;
+ speed=Math.max(0,speed);
+ const kmh=speed*3.6;
+
+ if(dt>0&&dt<=15&&step<=Math.max(15,dt*25)&&accuracy<=25){
+  if(step>Math.max(3,accuracy*.4)&&kmh>2){
+   distanceM+=step;
+  }
+ }
+
+ const movingNow=kmh>3.5;
+ if(movingNow){
+  stillSince=0;
+  if(!movingSince)movingSince=t;
+  if(t-movingSince>=1500)moving=true;
+ }else{
+  movingSince=0;
+  if(!stillSince)stillSince=t;
+  if(t-stillSince>=2500)moving=false;
+ }
+
+ if(Number.isFinite(c.altitude)&&c.altitude!==null&&accuracy<=25){
+  if(altitude!==null){
+   const change=c.altitude-altitude;
+   if(change>2&&change<15&&dt>0&&dt<15)gainM+=change;
+  }
+  altitude=c.altitude;
+ }
+
+ lastFix=c;lastFixAt=t;lastSpeed=kmh;
+ $("speed").textContent=kmh.toFixed(1);
+ $("message").textContent=moving?
+  "GPS active · Riding":"GPS active · Stationary / Auto paused";
+ render();
+}
+
+function gpsError(error){
+ gpsAvailable=false;moving=false;
+ $("speed").textContent="0.0";
+ $("accuracy").textContent="Unavailable";
+ $("message").textContent="GPS error: "+error.message;
+ if(error.code===1){
+  stopGPS();
+  state="paused";
+ }
+ render();
+}
+
+function startGPS(){
+ if(!navigator.geolocation){
+  $("message").textContent="GPS is not supported in this browser.";
+  state="paused";render();return;
+ }
+ watchId=navigator.geolocation.watchPosition(
+  gpsSuccess,gpsError,
+  {enableHighAccuracy:true,maximumAge:0,timeout:15000}
+ );
 }
 
 function render(){
-  status.textContent=state.toUpperCase();
-  control.textContent=state==='ready'||state==='finished'
-    ?'Start Ride':state==='riding'?'Pause':'Resume';
-  finish.disabled=state==='ready'||state==='finished';
-  update();
+ $("status").textContent=state==="riding"?
+  (moving?"RIDING":"GPS / PAUSED"):state.toUpperCase();
+ $("control").textContent=state==="ready"||state==="finished"?
+  "Start Ride":state==="riding"?"Pause":"Resume";
+ $("finish").disabled=state==="ready"||state==="finished";
+ $("distance").textContent=(distanceM/1000).toFixed(2);
+ $("elevation").textContent=Math.round(gainM);
+ $("average").textContent=movingMs>0?
+  (distanceM/(movingMs/1000)*3.6).toFixed(1):"0.0";
 }
 
-control.addEventListener('click',()=>{
-  const now=Date.now();
-  if(state==='ready'||state==='finished'){
-    startedAt=now;
-    segmentStart=now;
-    ridingMs=0;
-    elapsedMs=0;
-    state='riding';
-  }else if(state==='riding'){
-    ridingMs+=now-segmentStart;
-    state='paused';
-  }else{
-    segmentStart=now;
-    state='riding';
-  }
-  render();
+$("control").onclick=()=>{
+ const now=Date.now();
+ if(state==="ready"||state==="finished"){
+  stopGPS();reset();
+  startTime=now;endTime=0;lastTick=now;
+  state="riding";startGPS();
+ }else if(state==="riding"){
+  state="paused";moving=false;
+  stopGPS();
+  $("speed").textContent="0.0";
+  $("message").textContent="Manually paused.";
+ }else{
+  state="riding";lastTick=now;
+  lastFix=null;lastFixAt=0;
+  moving=false;stillSince=0;movingSince=0;
+  startGPS();
+ }
+ render();
+};
+
+$("finish").onclick=()=>{
+ if(state==="ready"||state==="finished")return;
+ endTime=Date.now();
+ state="finished";moving=false;
+ stopGPS();
+ $("speed").textContent="0.0";
+ $("message").textContent="Ride finished. Saving rides is not enabled yet.";
+ render();
+};
+
+setInterval(()=>{
+ const now=Date.now();
+ const delta=Math.max(0,Math.min(now-lastTick,1000));
+ if(state==="riding"&&moving&&gpsAvailable&&
+    Date.now()-lastFixAt<7000){
+  movingMs+=delta;
+ }
+ lastTick=now;
+ $("ridingTime").textContent=fmt(movingMs);
+ const elapsed=state==="ready"?0:
+  (state==="finished"?endTime:now)-startTime;
+ $("elapsedTime").textContent=fmt(Math.max(0,elapsed));
+ if(state==="riding"&&lastFixAt&&now-lastFixAt>7000){
+  moving=false;
+  $("speed").textContent="0.0";
+  $("message").textContent="Waiting for fresh GPS updates.";
+ }
+ render();
+},500);
+
+document.querySelectorAll("[data-page]").forEach(btn=>{
+ btn.onclick=()=>{
+  document.querySelectorAll("main section").forEach(
+   s=>s.classList.add("hidden"));
+  $(btn.dataset.page).classList.remove("hidden");
+  document.querySelectorAll("[data-page]").forEach(
+   b=>b.classList.toggle("active",b===btn));
+ };
 });
-
-finish.addEventListener('click',()=>{
-  if(state==='ready'||state==='finished')return;
-  const now=Date.now();
-  if(state==='riding')ridingMs+=now-segmentStart;
-  elapsedMs=now-startedAt;
-  state='finished';
-  render();
-});
-
-setInterval(update,250);
-
-document.querySelectorAll('[data-page]').forEach(btn=>
-  btn.addEventListener('click',()=>{
-    document.querySelectorAll('main section').forEach(
-      section=>section.classList.add('hidden')
-    );
-    document.getElementById(btn.dataset.page).classList.remove('hidden');
-    document.querySelectorAll('[data-page]').forEach(
-      b=>b.classList.toggle('active',b===btn)
-    );
-  })
-);
-
 render();
 </script>
 </body>
