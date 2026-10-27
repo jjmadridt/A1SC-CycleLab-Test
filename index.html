@@ -5,48 +5,52 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#101820">
-<title>A1SC CycleLab 0.2</title>
+<title>A1SC CycleLab 0.3</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#101820;color:#fff;font-family:Arial,sans-serif}
-.app{max-width:520px;margin:auto;padding:18px 16px 105px}
-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
-.brand{color:#55d6c2;font-weight:800;letter-spacing:1px}
-.sub,.label,.note{color:#aabbc5;font-size:12px}
+body{margin:0;background:#101820;color:#fff;font-family:Arial,Helvetica,sans-serif}
+.app{max-width:520px;margin:auto;padding:18px 16px 110px}
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.brand{color:#55d6c2;font-weight:800;letter-spacing:1.3px}
+.sub,.label,.note{font-size:12px;color:#aabbc5}
 .sub{margin-top:5px}
 .status{font-size:11px;border:1px solid #52646e;border-radius:20px;padding:8px}
-h1{font-size:23px}
+h1{font-size:23px;margin:0 0 16px}
 .speed,.metric{background:#1d2b36;border-radius:16px;padding:18px}
 .speed{text-align:center;margin-bottom:12px}
-.big{font-size:76px;font-weight:800;font-variant-numeric:tabular-nums}
-.unit{color:#aabbc5}
+.big{font-size:76px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.15}
+.unit{font-size:15px;color:#aabbc5}
+.label{font-weight:700;letter-spacing:.5px}
 .metrics{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .metric{min-height:112px}
-.label{font-weight:700;letter-spacing:.5px}
 .value{font-size:28px;font-weight:750;margin-top:14px;font-variant-numeric:tabular-nums}
 .smallunit{font-size:13px;color:#aabbc5}
-.secondary{display:flex;justify-content:space-between;padding:15px;margin:14px 0;border:1px solid #354955;border-radius:12px;font-size:14px}
-.controls{display:flex;gap:10px}
+.toggle{display:flex;justify-content:center;gap:8px;margin-top:15px}
+.toggle button{padding:9px 17px;border-radius:20px;border:1px solid #52646e;background:transparent;color:#b9c8cf;font-weight:700}
+.toggle button.active{background:#55d6c2;color:#102326;border-color:#55d6c2}
+.secondary{display:flex;justify-content:space-between;align-items:center;padding:14px;margin:12px 0;border:1px solid #354955;border-radius:12px;font-size:14px;gap:12px}
+.secondary select{background:#30424c;color:#fff;border:0;border-radius:8px;padding:9px;font-size:13px}
+.controls{display:flex;gap:10px;margin-top:15px}
 button{cursor:pointer}
 .controls button{flex:1;border:0;border-radius:12px;padding:16px;font-size:16px;font-weight:700}
 .primary{background:#55d6c2;color:#102326}
 .danger{background:#63313a;color:#fff}
 button:disabled{opacity:.4}
 .note{line-height:1.5}
-.panel{background:#1d2b36;padding:20px;border-radius:15px;line-height:1.6}
+.panel{background:#1d2b36;padding:20px;border-radius:15px;line-height:1.6;color:#c6d3d9}
 .hidden{display:none}
-.nav{position:fixed;bottom:0;left:0;right:0;background:#17242d;border-top:1px solid #344650;padding:10px}
-.navinner{max-width:520px;margin:auto;display:grid;grid-template-columns:repeat(4,1fr)}
-.nav button{background:none;border:0;color:#aabbc5;padding:12px 4px}
+.nav{position:fixed;bottom:0;left:0;right:0;background:#17242d;border-top:1px solid #344650;padding:10px 5px max(12px,env(safe-area-inset-bottom))}
+.navinner{max-width:520px;margin:auto;display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.nav button{background:none;border:0;color:#aabbc5;padding:12px 4px;font-size:13px}
 .nav button.active{background:#29443f;color:#55d6c2;border-radius:10px;font-weight:700}
 </style>
 </head>
 <body>
 <main class="app">
-<header>
+<header class="top">
 <div>
 <div class="brand">A1SC / CYCLELAB</div>
-<div class="sub">LIVE GPS · VERSION 0.2</div>
+<div class="sub">LIVE GPS · VERSION 0.3</div>
 </div>
 <span class="status" id="status">READY</span>
 </header>
@@ -56,12 +60,17 @@ button:disabled{opacity:.4}
 <div class="speed">
 <div class="label">CURRENT SPEED</div>
 <div class="big" id="speed">0.0</div>
-<div class="unit">km/h</div>
+<div class="unit" id="speedUnit">km/h</div>
+<div class="toggle">
+<button id="metricBtn" class="active">KM/H</button>
+<button id="imperialBtn">MPH</button>
 </div>
+</div>
+
 <div class="metrics">
 <div class="metric">
 <div class="label">AVERAGE SPEED</div>
-<div class="value"><span id="average">0.0</span> <span class="smallunit">km/h</span></div>
+<div class="value"><span id="average">0.0</span> <span class="smallunit" id="avgUnit">km/h</span></div>
 </div>
 <div class="metric">
 <div class="label">RIDING TIME</div>
@@ -73,9 +82,10 @@ button:disabled{opacity:.4}
 </div>
 <div class="metric">
 <div class="label">DISTANCE</div>
-<div class="value"><span id="distance">0.00</span> <span class="smallunit">km</span></div>
+<div class="value"><span id="distance">0.00</span> <span class="smallunit" id="distanceUnit">km</span></div>
 </div>
 </div>
+
 <div class="secondary">
 <span>Total elapsed time</span>
 <strong id="elapsedTime">00:00:00</strong>
@@ -84,30 +94,34 @@ button:disabled{opacity:.4}
 <span>GPS accuracy</span>
 <strong id="accuracy">Waiting</strong>
 </div>
+<div class="secondary">
+<span>Movement profile</span>
+<select id="profile">
+<option value="cycle">Cycling</option>
+<option value="walk">Walk Test</option>
+</select>
+</div>
+
 <div class="controls">
 <button class="primary" id="control">Start Ride</button>
 <button class="danger" id="finish" disabled>Finish</button>
 </div>
-<p class="note" id="message">
-GPS is inactive. Start a ride to request location access.
-</p>
-<p class="note">
-Testing only. Keep Chrome open and screen on.
-Elevation gain is experimental. No ride history is saved yet.
-</p>
+
+<p class="note" id="message">GPS inactive. Press Start Ride.</p>
+<p class="note">Testing version. Keep Chrome open and the screen on. Elevation gain is experimental. Ride history is not saved yet.</p>
 </section>
 
 <section id="history" class="hidden">
 <h1>Ride History</h1>
-<div class="panel">Map-based ride history is planned for the next development stages.</div>
+<div class="panel">Map-based history and GPX imports are planned.</div>
 </section>
 <section id="partner" class="hidden">
 <h1>Virtual Partner</h1>
-<div class="panel">Two moving cyclist markers, comparing today's ride against a manually selected previous ride.</div>
+<div class="panel">Future comparison of today's GPS position against a previous ride.</div>
 </section>
 <section id="return" class="hidden">
 <h1>Return to Origin</h1>
-<div class="panel">Return navigation will be added after reliable GPS route recording.</div>
+<div class="panel">Return navigation will follow reliable route recording.</div>
 </section>
 </main>
 
@@ -122,21 +136,26 @@ Elevation gain is experimental. No ride history is saved yet.
 
 <script>
 const $=id=>document.getElementById(id);
-let state="ready",watchId=null;
-let startTime=0,endTime=0;
-let movingMs=0,lastTick=0,lastFix=null,lastFixAt=0;
-let distanceM=0,gainM=0,altitude=null;
-let moving=false,stillSince=0,movingSince=0;
-let lastSpeed=0,gpsAvailable=false;
-
+const MPH=0.6213711922;
 const fmt=ms=>{
- const s=Math.floor(ms/1000);
+ const s=Math.floor(Math.max(0,ms)/1000);
  return [Math.floor(s/3600),Math.floor(s/60)%60,s%60]
- .map(x=>String(x).padStart(2,"0")).join(":");
+ .map(n=>String(n).padStart(2,"0")).join(":");
 };
 
-function meters(a,b){
- const R=6371000,rad=Math.PI/180;
+let units="metric";
+let state="ready";
+let watchId=null;
+let session=0;
+let startedAt=0,finishedAt=0,lastTick=Date.now();
+let ridingMs=0,distanceM=0,gainM=0;
+let currentKmh=0,moving=false;
+let lastFix=null,lastFixAt=0,lastReceivedAt=0;
+let candidateSince=0,candidateMoving=null;
+let lastAltitude=null,altitudeBuffer=0;
+
+function haversine(a,b){
+ const rad=Math.PI/180,R=6371000;
  const dLat=(b.latitude-a.latitude)*rad;
  const dLon=(b.longitude-a.longitude)*rad;
  const x=Math.sin(dLat/2)**2+
@@ -145,6 +164,38 @@ function meters(a,b){
  return 2*R*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));
 }
 
+function reset(){
+ ridingMs=0;distanceM=0;gainM=0;
+ currentKmh=0;moving=false;
+ lastFix=null;lastFixAt=0;lastReceivedAt=0;
+ candidateSince=0;candidateMoving=null;
+ lastAltitude=null;altitudeBuffer=0;
+ $("accuracy").textContent="Waiting";
+}
+
+function render(){
+ const factor=units==="metric"?1:MPH;
+ $("speed").textContent=(currentKmh*factor).toFixed(1);
+ $("average").textContent=ridingMs>0?
+ (distanceM/(ridingMs/1000)*3.6*factor).toFixed(1):"0.0";
+ $("distance").textContent=(distanceM/1000*factor).toFixed(2);
+ $("elevation").textContent=Math.round(gainM);
+ $("speedUnit").textContent=units==="metric"?"km/h":"mph";
+ $("avgUnit").textContent=units==="metric"?"km/h":"mph";
+ $("distanceUnit").textContent=units==="metric"?"km":"mi";
+ $("metricBtn").classList.toggle("active",units==="metric");
+ $("imperialBtn").classList.toggle("active",units==="imperial");
+ $("status").textContent=state==="riding"?
+ (moving?"RIDING":"AUTO PAUSED"):state.toUpperCase();
+ $("control").textContent=state==="ready"||state==="finished"?
+ "Start Ride":state==="riding"?"Pause":"Resume";
+ $("finish").disabled=state==="ready"||state==="finished";
+ $("profile").disabled=state==="riding"||state==="paused";
+}
+
+$("metricBtn").onclick=()=>{units="metric";render();};
+$("imperialBtn").onclick=()=>{units="imperial";render();};
+
 function stopGPS(){
  if(watchId!==null){
   navigator.geolocation.clearWatch(watchId);
@@ -152,116 +203,169 @@ function stopGPS(){
  }
 }
 
-function reset(){
- movingMs=0;distanceM=0;gainM=0;
- lastFix=null;lastFixAt=0;altitude=null;
- moving=false;stillSince=0;movingSince=0;
- lastSpeed=0;gpsAvailable=false;
- $("speed").textContent="0.0";
- $("accuracy").textContent="Waiting";
+function clearMotion(){
+ moving=false;
+ currentKmh=0;
+ candidateSince=0;
+ candidateMoving=null;
+ lastFix=null;
+ lastFixAt=0;
+ lastReceivedAt=0;
+ lastAltitude=null;
+ altitudeBuffer=0;
 }
 
 function gpsSuccess(pos){
  if(state!=="riding")return;
- const c=pos.coords,t=pos.timestamp;
- const accuracy=c.accuracy;
- $("accuracy").textContent=Math.round(accuracy)+" m";
+ const c=pos.coords,t=pos.timestamp,now=Date.now();
+ if(!Number.isFinite(c.accuracy))return;
+ $("accuracy").textContent=Math.round(c.accuracy)+" m";
 
- if(accuracy>35){
-  $("message").textContent="GPS accuracy is low. Waiting for a better fix.";
+ if(now-t>10000||c.accuracy>35){
+  clearMotion();
+  $("message").textContent="Waiting for accurate, fresh GPS.";
+  render();
   return;
  }
 
- gpsAvailable=true;
- const dt=lastFixAt?(t-lastFixAt)/1000:0;
- const step=lastFix?meters(lastFix,c):0;
- let speed=Number.isFinite(c.speed)&&c.speed>=0?c.speed:
-  dt>0?step/dt:0;
- speed=Math.max(0,speed);
- const kmh=speed*3.6;
+ if(lastFixAt&&t<=lastFixAt)return;
 
- if(dt>0&&dt<=15&&step<=Math.max(15,dt*25)&&accuracy<=25){
-  if(step>Math.max(3,accuracy*.4)&&kmh>2){
+ let step=0,dt=0,derivedSpeed=0;
+ if(lastFix){
+  dt=(t-lastFixAt)/1000;
+  if(dt>0&&dt<=12){
+   step=haversine(lastFix,c);
+   derivedSpeed=step/dt;
+  }
+ }
+
+ const reportedSpeed=
+ Number.isFinite(c.speed)&&c.speed>=0?c.speed:null;
+ const speedMps=reportedSpeed!==null?reportedSpeed:derivedSpeed;
+ const plausible=dt>0&&dt<=12&&step<=dt*22+10;
+ const profile=$("profile").value;
+ const startThreshold=profile==="walk"?1.5:3.5;
+ const stopThreshold=profile==="walk"?0.8:2.0;
+ const kmh=Math.min(80,Math.max(0,speedMps*3.6));
+
+ lastReceivedAt=now;
+ currentKmh=kmh;
+
+ const wantsMoving=moving?
+ kmh>=stopThreshold:kmh>=startThreshold;
+
+ if(wantsMoving===moving){
+  candidateMoving=null;
+  candidateSince=0;
+ }else{
+  if(candidateMoving!==wantsMoving){
+   candidateMoving=wantsMoving;
+   candidateSince=now;
+  }
+  const delay=wantsMoving?1500:2500;
+  if(now-candidateSince>=delay){
+   moving=wantsMoving;
+   candidateMoving=null;
+   candidateSince=0;
+  }
+ }
+
+ if(plausible&&c.accuracy<=20&&moving){
+  const noiseLimit=Math.max(2,c.accuracy*.3);
+  if(step>noiseLimit&&step<=dt*22+10){
    distanceM+=step;
   }
  }
 
- const movingNow=kmh>3.5;
- if(movingNow){
-  stillSince=0;
-  if(!movingSince)movingSince=t;
-  if(t-movingSince>=1500)moving=true;
- }else{
-  movingSince=0;
-  if(!stillSince)stillSince=t;
-  if(t-stillSince>=2500)moving=false;
- }
-
- if(Number.isFinite(c.altitude)&&c.altitude!==null&&accuracy<=25){
-  if(altitude!==null){
-   const change=c.altitude-altitude;
-   if(change>2&&change<15&&dt>0&&dt<15)gainM+=change;
+ if(moving&&c.accuracy<=20&&
+    Number.isFinite(c.altitude)&&
+    Number.isFinite(c.altitudeAccuracy)&&
+    c.altitudeAccuracy<=12){
+  if(lastAltitude!==null&&dt>0&&dt<=12){
+   const diff=c.altitude-lastAltitude;
+   if(Math.abs(diff)<8){
+    altitudeBuffer+=diff;
+    if(altitudeBuffer>=3){
+     gainM+=altitudeBuffer;
+     altitudeBuffer=0;
+    }else if(altitudeBuffer<=-3){
+     altitudeBuffer=0;
+    }
+   }else{
+    altitudeBuffer=0;
+   }
   }
-  altitude=c.altitude;
+  lastAltitude=c.altitude;
+ }else{
+  lastAltitude=null;
+  altitudeBuffer=0;
  }
 
- lastFix=c;lastFixAt=t;lastSpeed=kmh;
- $("speed").textContent=kmh.toFixed(1);
+ lastFix=c;
+ lastFixAt=t;
  $("message").textContent=moving?
-  "GPS active · Riding":"GPS active · Stationary / Auto paused";
+ "GPS active · Movement detected":
+ "GPS active · Waiting for movement";
  render();
 }
 
 function gpsError(error){
- gpsAvailable=false;moving=false;
- $("speed").textContent="0.0";
+ if(state!=="riding")return;
+ clearMotion();
  $("accuracy").textContent="Unavailable";
- $("message").textContent="GPS error: "+error.message;
+ $("message").textContent="GPS: "+error.message;
  if(error.code===1){
-  stopGPS();
   state="paused";
+  stopGPS();
  }
  render();
 }
 
 function startGPS(){
  if(!navigator.geolocation){
-  $("message").textContent="GPS is not supported in this browser.";
-  state="paused";render();return;
+  state="paused";
+  $("message").textContent="Geolocation not supported.";
+  render();
+  return;
  }
+ const thisSession=++session;
  watchId=navigator.geolocation.watchPosition(
-  gpsSuccess,gpsError,
-  {enableHighAccuracy:true,maximumAge:0,timeout:15000}
+  pos=>{
+   if(thisSession===session)gpsSuccess(pos);
+  },
+  error=>{
+   if(thisSession===session)gpsError(error);
+  },
+  {enableHighAccuracy:true,maximumAge:0,timeout:20000}
  );
 }
 
-function render(){
- $("status").textContent=state==="riding"?
-  (moving?"RIDING":"GPS / PAUSED"):state.toUpperCase();
- $("control").textContent=state==="ready"||state==="finished"?
-  "Start Ride":state==="riding"?"Pause":"Resume";
- $("finish").disabled=state==="ready"||state==="finished";
- $("distance").textContent=(distanceM/1000).toFixed(2);
- $("elevation").textContent=Math.round(gainM);
- $("average").textContent=movingMs>0?
-  (distanceM/(movingMs/1000)*3.6).toFixed(1):"0.0";
+function stopTracking(){
+ session++;
+ stopGPS();
+ clearMotion();
 }
 
 $("control").onclick=()=>{
  const now=Date.now();
  if(state==="ready"||state==="finished"){
-  stopGPS();reset();
-  startTime=now;endTime=0;lastTick=now;
-  state="riding";startGPS();
+  stopTracking();
+  reset();
+  startedAt=now;
+  finishedAt=0;
+  lastTick=now;
+  state="riding";
+  $("message").textContent="Connecting to GPS...";
+  startGPS();
  }else if(state==="riding"){
-  state="paused";moving=false;
-  stopGPS();
-  $("speed").textContent="0.0";
+  state="paused";
+  stopTracking();
   $("message").textContent="Manually paused.";
  }else{
-  state="riding";lastTick=now;
-  lastFix=null;lastFixAt=0;
-  moving=false;stillSince=0;movingSince=0;
+  state="riding";
+  lastTick=now;
+  clearMotion();
+  $("message").textContent="Reconnecting to GPS...";
   startGPS();
  }
  render();
@@ -269,41 +373,43 @@ $("control").onclick=()=>{
 
 $("finish").onclick=()=>{
  if(state==="ready"||state==="finished")return;
- endTime=Date.now();
- state="finished";moving=false;
- stopGPS();
- $("speed").textContent="0.0";
- $("message").textContent="Ride finished. Saving rides is not enabled yet.";
+ finishedAt=Date.now();
+ state="finished";
+ stopTracking();
+ $("message").textContent="Ride finished. History saving not yet available.";
  render();
 };
 
 setInterval(()=>{
  const now=Date.now();
  const delta=Math.max(0,Math.min(now-lastTick,1000));
- if(state==="riding"&&moving&&gpsAvailable&&
-    Date.now()-lastFixAt<7000){
-  movingMs+=delta;
+ const fresh=lastReceivedAt&&now-lastReceivedAt<7000;
+ if(state==="riding"&&moving&&fresh){
+  ridingMs+=delta;
  }
  lastTick=now;
- $("ridingTime").textContent=fmt(movingMs);
- const elapsed=state==="ready"?0:
-  (state==="finished"?endTime:now)-startTime;
- $("elapsedTime").textContent=fmt(Math.max(0,elapsed));
- if(state==="riding"&&lastFixAt&&now-lastFixAt>7000){
-  moving=false;
-  $("speed").textContent="0.0";
-  $("message").textContent="Waiting for fresh GPS updates.";
+
+ if(state==="riding"&&lastReceivedAt&&!fresh){
+  clearMotion();
+  $("message").textContent="GPS signal interrupted. Timer paused.";
  }
+
+ $("ridingTime").textContent=fmt(ridingMs);
+ const elapsed=state==="ready"?0:
+ (state==="finished"?finishedAt:now)-startedAt;
+ $("elapsedTime").textContent=fmt(elapsed);
  render();
 },500);
 
 document.querySelectorAll("[data-page]").forEach(btn=>{
  btn.onclick=()=>{
   document.querySelectorAll("main section").forEach(
-   s=>s.classList.add("hidden"));
+   s=>s.classList.add("hidden")
+  );
   $(btn.dataset.page).classList.remove("hidden");
   document.querySelectorAll("[data-page]").forEach(
-   b=>b.classList.toggle("active",b===btn));
+   b=>b.classList.toggle("active",b===btn)
+  );
  };
 });
 render();
