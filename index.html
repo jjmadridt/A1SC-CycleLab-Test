@@ -4,19 +4,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#101820">
-<title>A1SC CycleLab 0.3</title>
+<meta name="theme-color" content="#090B12">
+<title>MOVE by A1SC · 0.4</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#101820;color:#fff;font-family:Arial,Helvetica,sans-serif}
+body{margin:0;background:#090B12;color:#fff;font-family:Arial,Helvetica,sans-serif}
 .app{max-width:520px;margin:auto;padding:18px 16px 110px}
 .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
-.brand{color:#55d6c2;font-weight:800;letter-spacing:1.3px}
+.brand{color:#FF279B;font-weight:800;letter-spacing:1.3px}
 .sub,.label,.note{font-size:12px;color:#aabbc5}
 .sub{margin-top:5px}
 .status{font-size:11px;border:1px solid #52646e;border-radius:20px;padding:8px}
 h1{font-size:23px;margin:0 0 16px}
-.speed,.metric{background:#1d2b36;border-radius:16px;padding:18px}
+.speed,.metric{background:#171C2B;border-radius:16px;padding:18px}
 .speed{text-align:center;margin-bottom:12px}
 .big{font-size:76px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.15}
 .unit{font-size:15px;color:#aabbc5}
@@ -27,30 +27,37 @@ h1{font-size:23px;margin:0 0 16px}
 .smallunit{font-size:13px;color:#aabbc5}
 .toggle{display:flex;justify-content:center;gap:8px;margin-top:15px}
 .toggle button{padding:9px 17px;border-radius:20px;border:1px solid #52646e;background:transparent;color:#b9c8cf;font-weight:700}
-.toggle button.active{background:#55d6c2;color:#102326;border-color:#55d6c2}
+.toggle button.active{background:#315FE8;color:#102326;border-color:#FF279B}
 .secondary{display:flex;justify-content:space-between;align-items:center;padding:14px;margin:12px 0;border:1px solid #354955;border-radius:12px;font-size:14px;gap:12px}
-.secondary select{background:#30424c;color:#fff;border:0;border-radius:8px;padding:9px;font-size:13px}
 .controls{display:flex;gap:10px;margin-top:15px}
 button{cursor:pointer}
 .controls button{flex:1;border:0;border-radius:12px;padding:16px;font-size:16px;font-weight:700}
-.primary{background:#55d6c2;color:#102326}
+.primary{background:#315FE8;color:#102326}
 .danger{background:#63313a;color:#fff}
 button:disabled{opacity:.4}
 .note{line-height:1.5}
-.panel{background:#1d2b36;padding:20px;border-radius:15px;line-height:1.6;color:#c6d3d9}
+.panel{background:#171C2B;padding:20px;border-radius:15px;line-height:1.6;color:#c6d3d9}
+#historyList{display:grid;gap:10px}
+.historyItem{width:100%;text-align:left;background:#171C2B;color:white;border:1px solid #36405B;border-radius:12px;padding:15px;font-size:14px;line-height:1.7}
+.historyItem strong{color:#fff}
+.historyItem small{color:#b8c2d6}
+.historyActions{display:flex;gap:8px;margin:12px 0;flex-wrap:wrap}
+.historyActions button{border:1px solid #58658A;border-radius:10px;background:#222D4C;color:white;padding:10px}
+.routeBox{background:#101728;border:1px solid #354364;border-radius:14px;padding:8px;margin-top:12px}
+.routeBox svg{display:block;width:100%;height:270px}
 .hidden{display:none}
-.nav{position:fixed;bottom:0;left:0;right:0;background:#17242d;border-top:1px solid #344650;padding:10px 5px max(12px,env(safe-area-inset-bottom))}
+.nav{position:fixed;bottom:0;left:0;right:0;background:#111725;border-top:1px solid #344650;padding:10px 5px max(12px,env(safe-area-inset-bottom))}
 .navinner{max-width:520px;margin:auto;display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
 .nav button{background:none;border:0;color:#aabbc5;padding:12px 4px;font-size:13px}
-.nav button.active{background:#29443f;color:#55d6c2;border-radius:10px;font-weight:700}
+.nav button.active{background:#242D50;color:#FF279B;border-radius:10px;font-weight:700}
 </style>
 </head>
 <body>
 <main class="app">
 <header class="top">
 <div>
-<div class="brand">A1SC / CYCLELAB</div>
-<div class="sub">LIVE GPS · VERSION 0.3</div>
+<div class="brand">MOVE <span style="font-size:11px;color:#ff279b;letter-spacing:0">By A1SC</span></div>
+<div class="sub">LIVE GPS · VERSION 0.4</div>
 </div>
 <span class="status" id="status">READY</span>
 </header>
@@ -94,13 +101,6 @@ button:disabled{opacity:.4}
 <span>GPS accuracy</span>
 <strong id="accuracy">Waiting</strong>
 </div>
-<div class="secondary">
-<span>Movement profile</span>
-<select id="profile">
-<option value="cycle">Cycling</option>
-<option value="walk">Walk Test</option>
-</select>
-</div>
 
 <div class="controls">
 <button class="primary" id="control">Start Ride</button>
@@ -108,12 +108,14 @@ button:disabled{opacity:.4}
 </div>
 
 <p class="note" id="message">GPS inactive. Press Start Ride.</p>
-<p class="note">Testing version. Keep Chrome open and the screen on. Elevation gain is experimental. Ride history is not saved yet.</p>
+<p class="note">Testing version. Keep Chrome open and the screen on. Elevation gain is experimental. Finished rides are saved in this browser; export GPX files for backup.</p>
 </section>
 
 <section id="history" class="hidden">
 <h1>Ride History</h1>
-<div class="panel">Map-based history and GPX imports are planned.</div>
+<p class="note">Finished rides are stored on this device and browser only. Export GPX files to keep independent backups.</p>
+<div id="historyList"></div>
+<div id="rideDetail" class="hidden"></div>
 </section>
 <section id="partner" class="hidden">
 <h1>Virtual Partner</h1>
@@ -153,6 +155,198 @@ let currentKmh=0,moving=false;
 let lastFix=null,lastFixAt=0,lastReceivedAt=0;
 let candidateSince=0,candidateMoving=null;
 let lastAltitude=null,altitudeBuffer=0;
+const STORE_KEY="a1sc_move_rides_v1";
+let route=[],routeBreak=true,selectedRideId=null;
+let storageAvailable=true;
+
+function readRides(){
+ try {
+  const a=JSON.parse(localStorage.getItem(STORE_KEY)||"[]");
+  return Array.isArray(a)?a:[];
+ }catch(e){
+  storageAvailable=false;
+  return [];
+ }
+}
+
+function saveRide(){
+ const ride={
+  id:String(Date.now()),
+  start:startedAt,
+  end:finishedAt,
+  ridingMs,distanceM,gainM,
+  route:route.slice()
+ };
+ try {
+  const rides=readRides();
+  rides.unshift(ride);
+  localStorage.setItem(STORE_KEY,JSON.stringify(rides));
+  return true;
+ }catch(e){
+  storageAvailable=false;
+  return false;
+ }
+}
+
+function escapeXml(s){
+ return String(s)
+  .replace(/&/g,"&amp;")
+  .replace(/</g,"&lt;")
+  .replace(/>/g,"&gt;")
+  .replace(/"/g,"&quot;");
+}
+
+function exportGPX(ride){
+ const pts=ride.route.filter(p=>
+  Number.isFinite(p.lat)&&Number.isFinite(p.lon)
+ );
+ if(!pts.length){
+  alert("This ride has no GPS points to export.");
+  return;
+ }
+ const xml='<?xml version="1.0" encoding="UTF-8"?>\n'+
+ '<gpx version="1.1" creator="MOVE by A1SC" xmlns="http://www.topografix.com/GPX/1/1">'+
+ '<metadata><name>'+
+ escapeXml("MOVE ride "+new Date(ride.start).toLocaleString())+
+ '</name></metadata><trk><name>MOVE Ride</name>'+
+ pts.reduce((out,p,i)=>out+
+ (i===0||p.break?'<trkseg>':'')+
+ '<trkpt lat="'+p.lat+'" lon="'+p.lon+'">'+
+ (Number.isFinite(p.alt)?'<ele>'+p.alt+'</ele>':'')+
+ '<time>'+new Date(p.t).toISOString()+'</time></trkpt>'+
+ ((i===pts.length-1||pts[i+1].break)?'</trkseg>':''),'')+
+ '</trk></gpx>';
+ const blob=new Blob([xml],{type:"application/gpx+xml"});
+ const url=URL.createObjectURL(blob);
+ const a=document.createElement("a");
+ a.href=url;
+ a.download="MOVE-"+new Date(ride.start).toISOString().slice(0,10)+"-"+ride.id+".gpx";
+ document.body.appendChild(a);
+ a.click();
+ a.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+
+function routeSVG(points){
+ const good=points.filter(p=>
+  Number.isFinite(p.lat)&&Number.isFinite(p.lon)
+ );
+ if(!good.length)
+  return '<p class="note">No accurate GPS route points were recorded.</p>';
+
+ const lats=good.map(p=>p.lat);
+ const lons=good.map(p=>p.lon);
+ const minLat=Math.min(...lats),maxLat=Math.max(...lats);
+ const midLat=(minLat+maxLat)/2;
+ const cos=Math.max(.01,Math.cos(midLat*Math.PI/180));
+ const minLon=Math.min(...lons),maxLon=Math.max(...lons);
+ const dx=Math.max((maxLon-minLon)*cos,.00001);
+ const dy=Math.max(maxLat-minLat,.00001);
+ const scale=Math.min(290/dx,230/dy);
+ const w=(maxLon-minLon)*cos*scale;
+ const h=(maxLat-minLat)*scale;
+ const ox=(320-w)/2,oy=(260-h)/2;
+ const xy=p=>[
+  (ox+(p.lon-minLon)*cos*scale).toFixed(1),
+  (oy+(maxLat-p.lat)*scale).toFixed(1)
+ ];
+ let segments=[],current=[];
+ good.forEach(p=>{
+  if(p.break&&current.length){
+   segments.push(current);
+   current=[];
+  }
+  current.push(xy(p).join(','));
+ });
+ if(current.length)segments.push(current);
+ const lines=segments.map(seg=>
+  '<polyline points="'+seg.join(' ')+
+  '" fill="none" stroke="#ff279b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>'
+ ).join('');
+ const first=xy(good[0]);
+ const last=xy(good[good.length-1]);
+ return '<div class="routeBox"><svg viewBox="0 0 320 260" role="img" aria-label="GPS route outline, north is up">'+
+ '<text x="8" y="18" fill="#aab6d0" font-size="11">N ↑ · GPS outline (not a street map)</text>'+
+ lines+
+ '<circle cx="'+first[0]+'" cy="'+first[1]+'" r="5" fill="#48d99d" stroke="#fff" stroke-width="1.5"/>'+
+ '<circle cx="'+last[0]+'" cy="'+last[1]+'" r="5" fill="#ff279b" stroke="#fff" stroke-width="1.5"/></svg></div>'+
+ '<p class="note">Green = start · Pink = finish · '+good.length+
+ ' GPS points. Breaks represent pauses or interrupted GPS.</p>';
+}
+
+function renderHistory(){
+ const rides=readRides();
+ const list=$("historyList");
+ const detail=$("rideDetail");
+ list.replaceChildren();
+ if(!rides.length){
+  list.textContent="No finished rides saved yet. Start and finish a test ride to create one.";
+  detail.classList.add("hidden");
+  return;
+ }
+ rides.forEach(ride=>{
+  const b=document.createElement("button");
+  b.className="historyItem";
+  const date=new Date(ride.start).toLocaleString();
+  const dist=(ride.distanceM/1000*(units==="metric"?1:MPH)).toFixed(2);
+  b.innerHTML='<strong></strong><br><small></small>';
+  b.querySelector('strong').textContent=date;
+  b.querySelector('small').textContent=
+   dist+(units==="metric"?" km":" mi")+
+   " · Riding "+fmt(ride.ridingMs)+
+   " · "+ride.route.length+" GPS points";
+  b.onclick=()=>{
+   selectedRideId=ride.id;
+   renderHistoryDetail(ride);
+  };
+  list.appendChild(b);
+ });
+ const selected=rides.find(r=>r.id===selectedRideId);
+ if(selected)renderHistoryDetail(selected);
+ else detail.classList.add("hidden");
+}
+
+function renderHistoryDetail(ride){
+ const detail=$("rideDetail");
+ detail.classList.remove("hidden");
+ detail.replaceChildren();
+ const title=document.createElement("h2");
+ title.textContent=new Date(ride.start).toLocaleString();
+ detail.appendChild(title);
+ const stats=document.createElement("p");
+ stats.className="note";
+ const dist=(ride.distanceM/1000*(units==="metric"?1:MPH)).toFixed(2);
+ stats.textContent=
+  "Distance "+dist+(units==="metric"?" km":" mi")+
+  " · Riding "+fmt(ride.ridingMs)+
+  " · Elapsed "+fmt(ride.end-ride.start)+
+  " · Elevation gain "+Math.round(ride.gainM)+" m";
+ detail.appendChild(stats);
+ const map=document.createElement("div");
+ map.innerHTML=routeSVG(ride.route);
+ detail.appendChild(map);
+ const actions=document.createElement("div");
+ actions.className="historyActions";
+ const exportBtn=document.createElement("button");
+ exportBtn.textContent="Export GPX";
+ exportBtn.onclick=()=>exportGPX(ride);
+ const deleteBtn=document.createElement("button");
+ deleteBtn.textContent="Delete ride";
+ deleteBtn.onclick=()=>{
+  if(!confirm("Delete this saved ride? This cannot be undone."))return;
+  try{
+   localStorage.setItem(STORE_KEY,JSON.stringify(
+    readRides().filter(r=>r.id!==ride.id)
+   ));
+   selectedRideId=null;
+   renderHistory();
+  }catch(e){
+   alert("Unable to delete ride from browser storage.");
+  }
+ };
+ actions.append(exportBtn,deleteBtn);
+ detail.appendChild(actions);
+}
 
 function haversine(a,b){
  const rad=Math.PI/180,R=6371000;
@@ -170,6 +364,7 @@ function reset(){
  lastFix=null;lastFixAt=0;lastReceivedAt=0;
  candidateSince=0;candidateMoving=null;
  lastAltitude=null;altitudeBuffer=0;
+ route=[];routeBreak=true;
  $("accuracy").textContent="Waiting";
 }
 
@@ -190,11 +385,16 @@ function render(){
  $("control").textContent=state==="ready"||state==="finished"?
  "Start Ride":state==="riding"?"Pause":"Resume";
  $("finish").disabled=state==="ready"||state==="finished";
- $("profile").disabled=state==="riding"||state==="paused";
 }
 
-$("metricBtn").onclick=()=>{units="metric";render();};
-$("imperialBtn").onclick=()=>{units="imperial";render();};
+$("metricBtn").onclick=()=>{
+ units="metric";
+ render();
+};
+$("imperialBtn").onclick=()=>{
+ units="imperial";
+ render();
+};
 
 function stopGPS(){
  if(watchId!==null){
@@ -222,6 +422,7 @@ function gpsSuccess(pos){
  $("accuracy").textContent=Math.round(c.accuracy)+" m";
 
  if(now-t>10000||c.accuracy>35){
+  routeBreak=true;
   clearMotion();
   $("message").textContent="Waiting for accurate, fresh GPS.";
   render();
@@ -243,9 +444,8 @@ function gpsSuccess(pos){
  Number.isFinite(c.speed)&&c.speed>=0?c.speed:null;
  const speedMps=reportedSpeed!==null?reportedSpeed:derivedSpeed;
  const plausible=dt>0&&dt<=12&&step<=dt*22+10;
- const profile=$("profile").value;
- const startThreshold=profile==="walk"?1.5:3.5;
- const stopThreshold=profile==="walk"?0.8:2.0;
+ const startThreshold=3.5;
+ const stopThreshold=2.0;
  const kmh=Math.min(80,Math.max(0,speedMps*3.6));
 
  lastReceivedAt=now;
@@ -267,6 +467,29 @@ function gpsSuccess(pos){
    moving=wantsMoving;
    candidateMoving=null;
    candidateSince=0;
+  }
+ }
+
+ if(c.accuracy<=20&&
+    Number.isFinite(c.latitude)&&
+    Number.isFinite(c.longitude)){
+  const previous=route.length?route[route.length-1]:null;
+  const point={
+   lat:c.latitude,lon:c.longitude,t,
+   alt:Number.isFinite(c.altitude)?c.altitude:null,
+   break:routeBreak
+  };
+  const gap=previous?(t-previous.t)/1000:0;
+  const gapDistance=previous?
+   haversine({latitude:previous.lat,longitude:previous.lon},c):0;
+  if(!previous||(gap>=2&&
+     gapDistance>=Math.max(3,c.accuracy*.3)&&
+     gapDistance<=gap*22+10)){
+   if(gap>12)point.break=true;
+   if(route.length<25000){
+    route.push(point);
+    routeBreak=false;
+   }
   }
  }
 
@@ -311,6 +534,7 @@ function gpsSuccess(pos){
 
 function gpsError(error){
  if(state!=="riding")return;
+ routeBreak=true;
  clearMotion();
  $("accuracy").textContent="Unavailable";
  $("message").textContent="GPS: "+error.message;
@@ -359,6 +583,7 @@ $("control").onclick=()=>{
   startGPS();
  }else if(state==="riding"){
   state="paused";
+  routeBreak=true;
   stopTracking();
   $("message").textContent="Manually paused.";
  }else{
@@ -376,7 +601,11 @@ $("finish").onclick=()=>{
  finishedAt=Date.now();
  state="finished";
  stopTracking();
- $("message").textContent="Ride finished. History saving not yet available.";
+ const saved=saveRide();
+ $("message").textContent=saved?
+  "Ride saved! Open History to view your route and export GPX.":
+  "Storage failed. This ride was NOT saved. Check browser storage settings.";
+ renderHistory();
  render();
 };
 
@@ -390,6 +619,7 @@ setInterval(()=>{
  lastTick=now;
 
  if(state==="riding"&&lastReceivedAt&&!fresh){
+  routeBreak=true;
   clearMotion();
   $("message").textContent="GPS signal interrupted. Timer paused.";
  }
@@ -407,12 +637,14 @@ document.querySelectorAll("[data-page]").forEach(btn=>{
    s=>s.classList.add("hidden")
   );
   $(btn.dataset.page).classList.remove("hidden");
+  if(btn.dataset.page==="history")renderHistory();
   document.querySelectorAll("[data-page]").forEach(
    b=>b.classList.toggle("active",b===btn)
   );
  };
 });
 render();
+renderHistory();
 </script>
 </body>
 </html>
