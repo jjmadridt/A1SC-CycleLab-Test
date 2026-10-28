@@ -648,5 +648,16 @@ document.querySelectorAll("[data-page]").forEach(btn=>{
 render();
 renderHistory();
 </script>
+
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("./sw.js")
+        .then(() => console.log("MOVE service worker registered"))
+        .catch(error => console.error("MOVE service worker error:", error));
+    });
+  }
+</script>
+
 </body>
 </html>
