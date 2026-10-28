@@ -1,0 +1,14 @@
+
+{
+  "name": "MOVE by A1SC",
+  "short_name": "MOVE",
+  "description": "MOVE Cycling Computer by A1SC",
+  "id": "/A1SC-CycleLab-Test/",
+  "start_url": "/A1SC-CycleLab-Test/",
+  "scope": "/A1SC-CycleLab-Test/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "orientation": "portrait",
+  "lang": "en"
+}
