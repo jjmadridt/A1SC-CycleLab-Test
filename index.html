@@ -122,8 +122,11 @@ button:disabled{opacity:.4}
 <div id="rideDetail" class="hidden"></div>
 </section>
 <section id="partner" class="hidden">
-<h1>Virtual Partner</h1>
-<div class="panel">Future comparison of today's GPS position against a previous ride.</div>
+<h1>MOVE Ghost</h1>
+<p class="note">Choose a previously recorded GPS ride as your Ghost route. Live comparison is coming in a later version.</p>
+<label class="label" for="ghostRideSelect">REFERENCE RIDE</label>
+<select id="ghostRideSelect" style="display:block;width:100%;padding:14px;margin:10px 0 14px;background:#171C2B;color:#fff;border:1px solid #52646e;border-radius:12px;font-size:15px"></select>
+<div id="ghostPreview" class="panel">Select a ride to preview its route.</div>
 </section>
 <section id="return" class="hidden">
 <h1>Return to Origin</h1>
@@ -135,7 +138,7 @@ button:disabled{opacity:.4}
 <div class="navinner">
 <button class="active" data-page="ride">Ride</button>
 <button data-page="history">History</button>
-<button data-page="partner">Partner</button>
+<button data-page="partner">Ghost</button>
 <button data-page="return">Return</button>
 </div>
 </nav>
@@ -277,6 +280,58 @@ function routeSVG(points){
  '<p class="note">Green = start · Pink = finish · '+good.length+
  ' GPS points. Breaks represent pauses or interrupted GPS.</p>';
 }
+
+const GHOST_KEY="a1sc_move_ghost_reference_v1";
+let ghostRideId=null;
+try { ghostRideId=localStorage.getItem(GHOST_KEY); } catch(e) {}
+
+function renderGhost(){
+ const select=$("ghostRideSelect"), preview=$("ghostPreview");
+ const rides=readRides().filter(r=>Array.isArray(r.route)&&r.route.some(p=>
+  Number.isFinite(p.lat)&&Number.isFinite(p.lon)));
+ select.replaceChildren();
+ const placeholder=document.createElement("option");
+ placeholder.value="";
+ placeholder.textContent=rides.length?"Choose a saved GPS ride":"No GPS rides available";
+ select.appendChild(placeholder);
+ rides.forEach(ride=>{
+  const option=document.createElement("option");
+  option.value=ride.id;
+  option.textContent=new Date(ride.start).toLocaleString()+" · "+
+   (ride.distanceM/1000).toFixed(2)+" km";
+  select.appendChild(option);
+ });
+ if(!rides.some(r=>r.id===ghostRideId))ghostRideId=null;
+ select.value=ghostRideId||"";
+ const ride=rides.find(r=>r.id===ghostRideId);
+ if(!ride){
+  preview.textContent=rides.length?"Select a saved ride to preview its route.":
+   "Record and save an outdoor ride with GPS points first.";
+  return;
+ }
+ preview.replaceChildren();
+ const details=document.createElement("p");
+ details.className="note";
+ details.textContent="Selected Ghost · "+new Date(ride.start).toLocaleString()+
+  " · "+(ride.distanceM/1000).toFixed(2)+" km · Riding "+fmt(ride.ridingMs);
+ preview.appendChild(details);
+ const outline=document.createElement("div");
+ outline.innerHTML=routeSVG(ride.route);
+ preview.appendChild(outline);
+ const info=document.createElement("p");
+ info.className="note";
+ info.textContent="This ride is saved as your Ghost reference on this browser. Live position and time-gap comparison are not active yet.";
+ preview.appendChild(info);
+}
+
+$("ghostRideSelect").onchange=()=>{
+ ghostRideId=$("ghostRideSelect").value||null;
+ try {
+  if(ghostRideId)localStorage.setItem(GHOST_KEY,ghostRideId);
+  else localStorage.removeItem(GHOST_KEY);
+ }catch(e){ alert("Ghost selection could not be saved in browser storage."); }
+ renderGhost();
+};
 
 function renderHistory(){
  const rides=readRides();
@@ -650,6 +705,7 @@ document.querySelectorAll("[data-page]").forEach(btn=>{
   );
   $(btn.dataset.page).classList.remove("hidden");
   if(btn.dataset.page==="history")renderHistory();
+  if(btn.dataset.page==="partner")renderGhost();
   document.querySelectorAll("[data-page]").forEach(
    b=>b.classList.toggle("active",b===btn)
   );
@@ -657,6 +713,7 @@ document.querySelectorAll("[data-page]").forEach(btn=>{
 });
 render();
 renderHistory();
+renderGhost();
 </script>
 
 <script>
