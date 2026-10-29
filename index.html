@@ -7,7 +7,7 @@
 <meta name="theme-color" content="#090B12">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="icon" type="image/png" href="./move-icon-192.png">
-<link rel="apple-touch-icon" href="./move-icon-192.png"><title>MOVE by A1SC · 0.9</title>
+<link rel="apple-touch-icon" href="./move-icon-192.png"><title>MOVE by A1SC · 1.0</title>
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#090B12;color:#fff;font-family:Arial,Helvetica,sans-serif}
@@ -442,6 +442,17 @@ $("ghostRideSelect").onchange=()=>{
  renderGhost();
 };
 
+function historyAverageSpeed(ride){
+ const distance=Number(ride.distanceM);
+ const riding=Number(ride.ridingMs);
+ if(!Number.isFinite(distance)||!Number.isFinite(riding)||riding<=0||distance<0){
+  return "—";
+ }
+ const kmh=distance/riding*3600;
+ return (kmh*(units==="metric"?1:MPH)).toFixed(1)+
+  (units==="metric"?" km/h":" mph");
+}
+
 function renderHistory(){
  const rides=readRides();
  const list=$("historyList");
@@ -461,6 +472,7 @@ function renderHistory(){
   b.querySelector('strong').textContent=date;
   b.querySelector('small').textContent=
    dist+(units==="metric"?" km":" mi")+
+   " · Avg "+historyAverageSpeed(ride)+
    " · Riding "+fmt(ride.ridingMs)+
    " · "+ride.route.length+" GPS points";
   b.onclick=()=>{
@@ -486,6 +498,7 @@ function renderHistoryDetail(ride){
  const dist=(ride.distanceM/1000*(units==="metric"?1:MPH)).toFixed(2);
  stats.textContent=
   "Distance "+dist+(units==="metric"?" km":" mi")+
+  " · Average speed "+historyAverageSpeed(ride)+
   " · Riding "+fmt(ride.ridingMs)+
   " · Elapsed "+fmt(ride.end-ride.start)+
   " · Elevation gain "+Math.round(ride.gainM)+" m";
@@ -568,12 +581,14 @@ $("metricBtn").onclick=()=>{
  units="metric";
  updateGhostTargetLabel();
  renderGhostPace();
+ renderHistory();
  render();
 };
 $("imperialBtn").onclick=()=>{
  units="imperial";
  updateGhostTargetLabel();
  renderGhostPace();
+ renderHistory();
  render();
 };
 
