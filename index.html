@@ -7,7 +7,7 @@
 <meta name="theme-color" content="#090B12">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="icon" type="image/png" href="./move-icon-192.png">
-<link rel="apple-touch-icon" href="./move-icon-192.png"><title>MOVE by A1SC · 0.4</title>
+<link rel="apple-touch-icon" href="./move-icon-192.png"><title>MOVE by A1SC · 0.5</title>
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#090B12;color:#fff;font-family:Arial,Helvetica,sans-serif}
@@ -36,6 +36,7 @@ button{cursor:pointer}
 .controls button{flex:1;border:0;border-radius:12px;padding:16px;font-size:16px;font-weight:700}
 .primary{background:#315FE8;color:#102326}
 .danger{background:#63313a;color:#fff}
+.pause{background:#303B59;color:#fff}
 button:disabled{opacity:.4}
 .note{line-height:1.5}
 .panel{background:#171C2B;padding:20px;border-radius:15px;line-height:1.6;color:#c6d3d9}
@@ -59,7 +60,7 @@ button:disabled{opacity:.4}
 <header class="top">
 <div>
 <div class="brand">MOVE <span style="font-size:11px;color:#ff279b;letter-spacing:0">By A1SC</span></div>
-<div class="sub">LIVE GPS · VERSION 0.4</div>
+<div class="sub">LIVE GPS · VERSION 0.5</div>
 </div>
 <span class="status" id="status">READY</span>
 </header>
@@ -106,6 +107,7 @@ button:disabled{opacity:.4}
 
 <div class="controls">
 <button class="primary" id="control">Start Ride</button>
+<button class="pause" id="pause" disabled>Pause</button>
 <button class="danger" id="finish" disabled>Finish</button>
 </div>
 
@@ -384,8 +386,10 @@ function render(){
  $("imperialBtn").classList.toggle("active",units==="imperial");
  $("status").textContent=state==="riding"?
  (moving?"RIDING":"AUTO PAUSED"):state.toUpperCase();
- $("control").textContent=state==="ready"||state==="finished"?
- "Start Ride":state==="riding"?"Pause":"Resume";
+ $("control").textContent="Start Ride";
+ $("control").disabled=state==="riding"||state==="paused";
+ $("pause").disabled=state==="ready"||state==="finished";
+ $("pause").textContent=state==="paused"?"Resume":"Pause";
  $("finish").disabled=state==="ready"||state==="finished";
 }
 
@@ -573,24 +577,30 @@ function stopTracking(){
 }
 
 $("control").onclick=()=>{
+ if(state!=="ready"&&state!=="finished")return;
  const now=Date.now();
- if(state==="ready"||state==="finished"){
-  stopTracking();
-  reset();
-  startedAt=now;
-  finishedAt=0;
-  lastTick=now;
-  state="riding";
-  $("message").textContent="Connecting to GPS...";
-  startGPS();
- }else if(state==="riding"){
+ stopTracking();
+ reset();
+ startedAt=now;
+ finishedAt=0;
+ lastTick=now;
+ state="riding";
+ $("message").textContent="Connecting to GPS...";
+ startGPS();
+ render();
+};
+
+$("pause").onclick=()=>{
+ const now=Date.now();
+ if(state==="riding"){
   state="paused";
   routeBreak=true;
   stopTracking();
-  $("message").textContent="Manually paused.";
- }else{
+  $("message").textContent="Manually paused. Elapsed time continues.";
+ }else if(state==="paused"){
   state="riding";
   lastTick=now;
+  routeBreak=true;
   clearMotion();
   $("message").textContent="Reconnecting to GPS...";
   startGPS();
