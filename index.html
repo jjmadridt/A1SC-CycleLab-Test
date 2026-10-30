@@ -105,6 +105,33 @@ button:disabled{opacity:.4}
 .move-confirm-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:22px}
 .move-confirm-actions button{border-radius:11px;padding:12px 15px;font-weight:700;border:1px solid #52646e;background:#303B59;color:white}
 .move-confirm-actions .move-confirm-delete{background:#8c3347;border-color:#b94a65}
+
+/* Ghost cockpit: compact controls, unit switch directly above progress, map first. */
+#partner{padding-bottom:35px}
+#partner h1{margin:0 0 10px}
+#partner .ghostDashboard{padding:12px 14px 10px;margin-bottom:8px;line-height:1.3}
+#partner .ghostTargetRow{display:block}
+#partner #ghostTargetLabel{display:block;margin-bottom:5px}
+#partner #ghostTarget{width:92px!important;padding:8px!important;font-size:17px!important}
+#partner .ghostUnitRow{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:5px}
+#partner .ghostUnitRow .toggle{margin:0;gap:5px}
+#partner .ghostUnitRow .toggle button{padding:7px 13px;font-size:12px}
+#partner .ghostUnitRow .note{font-size:10px}
+#partner #ghostLine{height:66px;max-height:66px}
+#partner #ghostStats{font-size:11px;line-height:1.4}
+#partner .ghostMapPanel{padding:12px;margin-bottom:8px;line-height:1.4}
+#partner #ghostRouteMap{height:clamp(270px,43dvh,480px);margin-top:7px}
+#partner #ghostRouteFallback svg{height:clamp(270px,43dvh,480px)}
+#partner #ghostRouteStatus{font-size:11px;margin:7px 0}
+#partner #ghostFollow{font-size:11px;padding:7px 9px!important}
+#partner .ghostControls{position:sticky;bottom:calc(68px + env(safe-area-inset-bottom));z-index:500;background:#090B12;padding:6px 0 4px;box-shadow:0 -7px 18px #090B12}
+#partner .ghostControls .controls{margin:0;gap:8px}
+#partner .ghostControls .controls button{padding:10px 5px;font-size:13px;border-radius:10px}
+#partner #ghostRideStatus{font-size:10px;margin:5px 0 0}
+#partner .ghostReferenceDetails{margin:10px 0 16px}
+#partner .ghostReferenceDetails summary{cursor:pointer;color:#aabbc5;font-size:12px;padding:8px 0}
+#partner #ghostRideSelect{padding:10px!important;margin:7px 0!important}
+@media(max-height:740px){#partner #ghostRouteMap,#partner #ghostRouteFallback svg{height:40dvh}}
 </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
 <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
@@ -170,9 +197,9 @@ button:disabled{opacity:.4}
 </section>
 <section id="partner" class="hidden">
 <h1>MOVE Ghost</h1>
-<p class="note">Ghost Pace compares your live distance with a virtual rider holding your chosen average speed. No previous route is required.</p>
-<div class="panel" style="margin-bottom:14px">
- <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+
+<div class="panel ghostDashboard">
+ <div class="ghostTargetRow">
  <label class="label" id="ghostTargetLabel" for="ghostTarget">GHOST TARGET SPEED (km/h)</label>
  <div class="toggle" style="margin-top:0"><button id="ghostMetricBtn" class="active" type="button">KM/H</button><button id="ghostImperialBtn" type="button">MPH</button></div>
  </div>
@@ -180,6 +207,7 @@ button:disabled{opacity:.4}
   <input id="ghostTarget" type="number" min="1" max="80" step="0.5" inputmode="decimal" value="25" style="width:110px;padding:12px;border-radius:10px;background:#101728;color:white;border:1px solid #52646e;font-size:18px">
   <span class="note" id="ghostTargetSource">Manual target · saved for future rides</span>
  </div>
+ <div class="ghostUnitRow"><div class="toggle"><button id="ghostMetricBtn" class="active" type="button">KM/H</button><button id="ghostImperialBtn" type="button">MPH</button></div><span class="note">BLUE = YOU · PINK = GHOST</span></div>
  <svg id="ghostLine" viewBox="0 0 320 110" style="width:100%;display:block" role="img" aria-label="Linear distance comparison">
   <line x1="20" y1="52" x2="300" y2="52" stroke="#52646e" stroke-width="5" stroke-linecap="round"/>
   <circle id="ghostYouDot" cx="20" cy="52" r="9" fill="#315FE8" stroke="white" stroke-width="2"/>
@@ -189,25 +217,27 @@ button:disabled{opacity:.4}
   <text id="ghostAxis" x="160" y="90" text-anchor="middle" fill="#aabbc5" font-size="11">0–1 km</text>
  </svg>
  <div id="ghostStats" class="note" aria-live="off">Start a ride to compare your progress.</div>
- <div class="controls" style="margin-top:18px">
-  <button class="primary" id="ghostStart">Start Ride</button>
-  <button class="pause" id="ghostPause" disabled>Pause</button>
-  <button class="danger" id="ghostFinish" disabled>Finish</button>
- </div>
- <p id="ghostRideStatus" class="note">Ready to record a ride.</p>
- <p class="note">Ghost progresses using total elapsed time, including manual pauses. Your distance remains frozen while paused.</p>
+
 </div>
-<div class="panel" style="margin-bottom:14px">
+<div class="panel ghostMapPanel">
  <div class="label">GHOST ROUTE · BLUE = YOU · PINK = GHOST</div>
  <div id="ghostRouteMap" class="hidden"></div>
  <div id="ghostRouteFallback"></div>
  <p class="note" id="ghostRouteStatus">Select a saved GPS ride to enable route comparison.</p>
  <button id="ghostFollow" type="button" style="background:#303B59;color:white;border:1px solid #52646e;border-radius:9px;padding:10px">Follow my position: ON</button>
 </div>
-<p class="note">Choose a saved GPS ride for route replay. Ghost Pace remains available above.</p>
+<div class="ghostControls">
+ <div class="controls">
+  <button class="primary" id="ghostStart">Start Ride</button>
+  <button class="pause" id="ghostPause" disabled>Pause</button>
+  <button class="danger" id="ghostFinish" disabled>Finish</button>
+ </div>
+ <p id="ghostRideStatus" class="note">Ready to record a ride.</p>
+</div>
+
 <label class="label" for="ghostRideSelect">REFERENCE RIDE</label>
 <select id="ghostRideSelect" style="display:block;width:100%;padding:14px;margin:10px 0 14px;background:#171C2B;color:#fff;border:1px solid #52646e;border-radius:12px;font-size:15px"></select>
-<div id="ghostPreview" class="panel">Select a ride to preview its route.</div>
+<details class="ghostReferenceDetails"><summary>Reference ride details</summary><div id="ghostPreview" class="panel">Select a ride to preview its route.</div></details>
 </section>
 <section id="return" class="hidden">
 <h1>Return to Origin</h1>
