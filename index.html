@@ -7,7 +7,7 @@
 <meta name="theme-color" content="#090B12">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="icon" type="image/png" href="./move-icon-192.png">
-<link rel="apple-touch-icon" href="./move-icon-192.png"><title>MOVE by A1SC · 1.2</title>
+<link rel="apple-touch-icon" href="./move-icon-192.png"><title>MOVE by A1SC · 1.3</title>
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#090B12;color:#fff;font-family:Arial,Helvetica,sans-serif}
@@ -68,7 +68,7 @@ button:disabled{opacity:.4}
 <header class="top">
 <div>
 <div class="brand">MOVE <span style="font-size:11px;color:#ff279b;letter-spacing:0">By A1SC</span></div>
-<div class="sub">LIVE GPS · VERSION 1.2</div>
+<div class="sub">LIVE GPS · VERSION 1.3</div>
 </div>
 <div class="headerActions"><button class="homeBtn" id="trainLabHome" type="button" aria-label="Home — Train Lab">⌂ Home</button><span class="status" id="status">READY</span></div>
 </header>
@@ -875,7 +875,7 @@ function stopTracking(){
  clearMotion();
 }
 
-const TRAIN_LAB_HOME="https://jjmadridt.github.io/FitClimb/index.html";
+const TRAIN_LAB_HOME="https://jjmadridt.github.io/A1SC-TrainLab-Test/";
 $("trainLabHome").onclick=()=>{
  if((state==="riding"||state==="paused")&&
     !window.confirm("A ride is in progress. Leaving MOVE may stop GPS recording and your unsaved ride may be lost. Finish and save your ride before leaving. Leave anyway?"))return;
