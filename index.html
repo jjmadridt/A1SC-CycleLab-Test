@@ -110,28 +110,27 @@ button:disabled{opacity:.4}
 #partner{padding-bottom:35px}
 #partner h1{margin:0 0 10px}
 #partner .ghostDashboard{padding:12px 14px 10px;margin-bottom:8px;line-height:1.3}
-#partner .ghostTargetRow{display:block}
-#partner #ghostTargetLabel{display:block;margin-bottom:5px}
-#partner #ghostTarget{width:92px!important;padding:8px!important;font-size:17px!important}
-#partner .ghostUnitRow{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:5px}
-#partner .ghostUnitRow .toggle{margin:0;gap:5px}
-#partner .ghostUnitRow .toggle button{padding:7px 13px;font-size:12px}
-#partner .ghostUnitRow .note{font-size:10px}
+#partner #ghostTargetLabel{display:block;margin-bottom:7px}
+#partner .ghostSpeedControls{display:flex;align-items:center;gap:10px;min-width:0}
+#partner #ghostTarget{flex:0 1 115px;min-width:75px;width:115px!important;padding:9px!important;font-size:18px!important;margin:0!important}
+#partner .ghostUnitToggle{display:flex;flex:0 0 auto;gap:6px;margin:0}
+#partner .ghostUnitToggle button{padding:10px 12px;font-size:12px;white-space:nowrap}
+#partner #ghostTargetSource{font-size:clamp(9px,2.45vw,11px);white-space:nowrap;letter-spacing:-.1px;margin:7px 0 0}
 #partner #ghostLine{height:66px;max-height:66px}
 #partner #ghostStats{font-size:11px;line-height:1.4}
 #partner .ghostMapPanel{padding:12px;margin-bottom:8px;line-height:1.4}
-#partner #ghostRouteMap{height:clamp(270px,43dvh,480px);margin-top:7px}
-#partner #ghostRouteFallback svg{height:clamp(270px,43dvh,480px)}
+#partner #ghostRouteMap{height:clamp(230px,35dvh,390px);margin-top:7px}
+#partner #ghostRouteFallback svg{height:clamp(230px,35dvh,390px)}
 #partner #ghostRouteStatus{font-size:11px;margin:7px 0}
 #partner #ghostFollow{font-size:11px;padding:7px 9px!important}
-#partner .ghostControls{position:sticky;bottom:calc(68px + env(safe-area-inset-bottom));z-index:500;background:#090B12;padding:6px 0 4px;box-shadow:0 -7px 18px #090B12}
+#partner .ghostControls{position:static;background:#090B12;padding:6px 0 4px;box-shadow:none}
 #partner .ghostControls .controls{margin:0;gap:8px}
 #partner .ghostControls .controls button{padding:10px 5px;font-size:13px;border-radius:10px}
 #partner #ghostRideStatus{font-size:10px;margin:5px 0 0}
 #partner .ghostReferenceDetails{margin:10px 0 16px}
 #partner .ghostReferenceDetails summary{cursor:pointer;color:#aabbc5;font-size:12px;padding:8px 0}
 #partner #ghostRideSelect{padding:10px!important;margin:7px 0!important}
-@media(max-height:740px){#partner #ghostRouteMap,#partner #ghostRouteFallback svg{height:40dvh}}
+@media(max-height:740px){#partner #ghostRouteMap,#partner #ghostRouteFallback svg{height:30dvh}}
 </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
 <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
@@ -199,15 +198,12 @@ button:disabled{opacity:.4}
 <h1>MOVE Ghost</h1>
 
 <div class="panel ghostDashboard">
- <div class="ghostTargetRow">
  <label class="label" id="ghostTargetLabel" for="ghostTarget">GHOST TARGET SPEED (km/h)</label>
- <div class="toggle" style="margin-top:0"><button id="ghostMetricBtn" class="active" type="button">KM/H</button><button id="ghostImperialBtn" type="button">MPH</button></div>
+ <div class="ghostSpeedControls">
+  <input id="ghostTarget" type="number" min="1" max="80" step="0.5" inputmode="decimal" value="25" aria-describedby="ghostTargetSource">
+  <div class="toggle ghostUnitToggle"><button id="ghostMetricBtn" class="active" type="button">KM/H</button><button id="ghostImperialBtn" type="button">MPH</button></div>
  </div>
- <div style="display:flex;gap:10px;align-items:center;margin:10px 0">
-  <input id="ghostTarget" type="number" min="1" max="80" step="0.5" inputmode="decimal" value="25" style="width:110px;padding:12px;border-radius:10px;background:#101728;color:white;border:1px solid #52646e;font-size:18px">
-  <span class="note" id="ghostTargetSource">Manual target · saved for future rides</span>
- </div>
- <div class="ghostUnitRow"><div class="toggle"><button id="ghostMetricBtn" class="active" type="button">KM/H</button><button id="ghostImperialBtn" type="button">MPH</button></div><span class="note">BLUE = YOU · PINK = GHOST</span></div>
+ <div class="note" id="ghostTargetSource">Manual target · saved for future rides</div>
  <svg id="ghostLine" viewBox="0 0 320 110" style="width:100%;display:block" role="img" aria-label="Linear distance comparison">
   <line x1="20" y1="52" x2="300" y2="52" stroke="#52646e" stroke-width="5" stroke-linecap="round"/>
   <circle id="ghostYouDot" cx="20" cy="52" r="9" fill="#315FE8" stroke="white" stroke-width="2"/>
@@ -523,7 +519,7 @@ function updateGhostTargetLabel(){
  $("ghostMetricBtn").classList.toggle("active",units==="metric");
  $("ghostImperialBtn").classList.toggle("active",units==="imperial");
  $("ghostTargetSource").textContent=ghostTargetMode==="reference"?
-  "Calculated from selected ride · change to override":
+  "Calculated from selected ride · Tap to override":
   ghostTargetMode==="override"?
   "Manual override for selected ride · original ride unchanged":
   "Manual target · saved for future rides";
