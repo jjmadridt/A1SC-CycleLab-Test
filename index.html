@@ -7,7 +7,7 @@
 <meta name="theme-color" content="#090B12">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="icon" type="image/png" href="./move-icon-192.png">
-<link rel="apple-touch-icon" href="./move-icon-192.png"><title>MOVE by A1SC · 1.1</title>
+<link rel="apple-touch-icon" href="./move-icon-192.png"><title>MOVE by A1SC · 1.2</title>
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#090B12;color:#fff;font-family:Arial,Helvetica,sans-serif}
@@ -16,6 +16,9 @@ body{margin:0;background:#090B12;color:#fff;font-family:Arial,Helvetica,sans-ser
 .brand{color:#FF279B;font-weight:800;letter-spacing:1.3px}
 .sub,.label,.note{font-size:12px;color:#aabbc5}
 .sub{margin-top:5px}
+.headerActions{display:flex;align-items:center;gap:8px}
+.homeBtn{border:1px solid #52646e;border-radius:12px;background:#171C2B;color:white;padding:9px 12px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px}
+.homeBtn:focus-visible{outline:2px solid #ff279b;outline-offset:2px}
 .status{font-size:11px;border:1px solid #52646e;border-radius:20px;padding:8px}
 h1{font-size:23px;margin:0 0 16px}
 .speed,.metric{background:#171C2B;border-radius:16px;padding:18px}
@@ -65,9 +68,9 @@ button:disabled{opacity:.4}
 <header class="top">
 <div>
 <div class="brand">MOVE <span style="font-size:11px;color:#ff279b;letter-spacing:0">By A1SC</span></div>
-<div class="sub">LIVE GPS · VERSION 1.1</div>
+<div class="sub">LIVE GPS · VERSION 1.2</div>
 </div>
-<span class="status" id="status">READY</span>
+<div class="headerActions"><button class="homeBtn" id="trainLabHome" type="button" aria-label="Home — Train Lab">⌂ Home</button><span class="status" id="status">READY</span></div>
 </header>
 
 <section id="ride">
@@ -871,6 +874,13 @@ function stopTracking(){
  stopGPS();
  clearMotion();
 }
+
+const TRAIN_LAB_HOME="https://jjmadridt.github.io/FitClimb/index.html";
+$("trainLabHome").onclick=()=>{
+ if((state==="riding"||state==="paused")&&
+    !window.confirm("A ride is in progress. Leaving MOVE may stop GPS recording and your unsaved ride may be lost. Finish and save your ride before leaving. Leave anyway?"))return;
+ window.location.assign(TRAIN_LAB_HOME);
+};
 
 $("control").onclick=()=>{
  if(state!=="ready"&&state!=="finished")return;
