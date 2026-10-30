@@ -59,6 +59,35 @@ button:disabled{opacity:.4}
 #ghostRouteMap{height:310px;border-radius:12px;background:#101728;overflow:hidden;margin-top:10px}
 #ghostRouteFallback svg{width:100%;height:310px;display:block}
 #ghostRouteStatus{margin-top:8px}
+
+/* Compact ride dashboard: preserve controls within easy reach on phones. */
+#ride h1{margin-bottom:9px}
+#ride .speed{padding:12px 14px;margin-bottom:9px}
+#ride .speedReading{display:flex;align-items:center;justify-content:center;gap:12px;min-height:77px}
+#ride .big{font-size:clamp(46px,15vw,70px);line-height:1;font-variant-numeric:tabular-nums}
+#ride .speedUnits{display:flex;flex-direction:column;align-items:flex-start;gap:7px}
+#ride .speedUnits .unit{font-size:12px}
+#ride .speedUnits .toggle{margin:0;gap:4px}
+#ride .speedUnits .toggle button{padding:8px 9px;font-size:11px;border-radius:10px}
+#ride .metrics{gap:8px}
+#ride .metric{min-height:0;padding:12px 11px;border-radius:12px}
+#ride .metric .label{font-size:10px}
+#ride .metric .value{font-size:clamp(19px,5.5vw,26px);margin-top:7px;white-space:nowrap}
+#ride .metric .smallunit{font-size:11px}
+#ride .secondary{padding:9px 12px;margin:8px 0;font-size:12px}
+#ride .controls{position:sticky;bottom:calc(70px + env(safe-area-inset-bottom));z-index:5;background:#090B12;padding:8px 0;margin-top:9px;box-shadow:0 -8px 16px #090B12}
+#ride .controls button{padding:13px 6px;font-size:14px;min-width:0}
+#ride .note{font-size:11px;margin:8px 0}
+@media(max-height:740px){
+ .app{padding-top:10px}.top{margin-bottom:10px}
+ #ride h1{font-size:19px;margin-bottom:7px}
+ #ride .speed{padding:9px 12px}
+ #ride .speedReading{min-height:62px}
+ #ride .big{font-size:clamp(43px,13vw,62px)}
+ #ride .metric{padding:9px 10px}
+ #ride .metric .value{margin-top:5px}
+ #ride .secondary{padding:7px 10px;margin:6px 0}
+}
 </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
 <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
@@ -77,12 +106,7 @@ button:disabled{opacity:.4}
 <h1>Ride Dashboard</h1>
 <div class="speed">
 <div class="label">CURRENT SPEED</div>
-<div class="big" id="speed">0.0</div>
-<div class="unit" id="speedUnit">km/h</div>
-<div class="toggle">
-<button id="metricBtn" class="active">KM/H</button>
-<button id="imperialBtn">MPH</button>
-</div>
+<div class="speedReading"><div class="big" id="speed">0.0</div><div class="speedUnits"><div class="unit" id="speedUnit">km/h</div><div class="toggle"><button id="metricBtn" class="active">KM/H</button><button id="imperialBtn">MPH</button></div></div></div>
 </div>
 
 <div class="metrics">
@@ -120,7 +144,7 @@ button:disabled{opacity:.4}
 </div>
 
 <p class="note" id="message">GPS inactive. Press Start Ride.</p>
-<p class="note">Testing version. Keep Chrome open and the screen on. Elevation gain is experimental. Finished rides are saved in this browser; export GPX files for backup.</p>
+<p class="note">Testing version. Keep MOVE visible while recording. Elevation gain is experimental. Finished rides are saved in this browser; export GPX files for backup.</p>
 </section>
 
 <section id="history" class="hidden">
