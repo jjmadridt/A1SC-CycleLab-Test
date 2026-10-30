@@ -497,6 +497,54 @@ function ghostRouteProgress(points) {
   });
 }
 
+// MOVE v1.4 Step 2: match a live GPS position to a saved route segment.
+// Returns null when the rider is off-route or the route is ambiguous.
+function ghostMatchPosition(referencePoints, livePoint, expectedProgressM=null) {
+  if (!livePoint || referencePoints.length < 2) return null;
+  const earth=6371000, rad=Math.PI/180;
+  const lat0=livePoint.lat*rad;
+  const xy=p=>({x:(p.lon-livePoint.lon)*rad*earth*Math.cos(lat0),
+                 y:(p.lat-livePoint.lat)*rad*earth});
+  let best=null, second=null;
+  for(let i=1;i<referencePoints.length;i++) {
+    const a=referencePoints[i-1],b=referencePoints[i];
+    if(b.break || b.progressM<=a.progressM) continue;
+    const A=xy(a),B=xy(b),dx=B.x-A.x,dy=B.y-A.y;
+    const len2=dx*dx+dy*dy;
+    if(len2<1 || len2>300*300) continue;
+    const fraction=Math.max(0,Math.min(1,-(A.x*dx+A.y*dy)/len2));
+    const x=A.x+fraction*dx,y=A.y+fraction*dy;
+    const offsetM=Math.hypot(x,y);
+    const progressM=a.progressM+fraction*(b.progressM-a.progressM);
+    // A distance-progress constraint helps avoid jumping between nearby loops.
+    if(expectedProgressM!==null && Math.abs(progressM-expectedProgressM)>150) continue;
+    const candidate={offsetM,progressM,
+      referenceElapsedMs:a.elapsedMs+fraction*(b.elapsedMs-a.elapsedMs)};
+    if(!best || offsetM<best.offsetM){second=best;best=candidate;}
+    else if(!second || offsetM<second.offsetM) second=candidate;
+  }
+  if(!best || best.offsetM>35) return null;
+  if(second && second.offsetM-best.offsetM<8 &&
+     Math.abs(second.progressM-best.progressM)>80) return null;
+  return best;
+}
+
+// Positive seconds means the live rider reached this route position earlier.
+// Uses elapsed clock time, including manual stops, for both rides.
+function ghostTimeGap(referencePoints, livePoints, liveStartTime) {
+  if(!referencePoints.length || !livePoints.length || !Number.isFinite(liveStartTime)) return null;
+  const liveProgress=ghostRouteProgress(livePoints);
+  const last=liveProgress[liveProgress.length-1];
+  if(!Number.isFinite(last.t)) return null;
+  const match=ghostMatchPosition(referencePoints,last,last.progressM);
+  if(!match) return null;
+  return {
+    aheadSeconds:(match.referenceElapsedMs-(last.t-liveStartTime))/1000,
+    referenceProgressM:match.progressM,
+    routeOffsetM:match.offsetM
+  };
+}
+
 function ghostAtTime(points,ms){
  if(!points.length)return null;
  const target=points[0].t+ms;
