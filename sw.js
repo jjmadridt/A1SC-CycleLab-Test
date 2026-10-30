@@ -1,5 +1,5 @@
 
-const CACHE_NAME = "move-shell-v6";
+const CACHE_NAME = "move-shell-v7";
 const APP_PATH = "/A1SC-CycleLab-Test/";
 
 self.addEventListener("install", event => {
