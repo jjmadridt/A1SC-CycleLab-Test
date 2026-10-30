@@ -477,6 +477,26 @@ let ghostFollow=true,ghostMapRideId=null,ghostMapReady=false;
 const ghostValidPoints=ride=>(Array.isArray(ride?.route)?ride.route:[])
  .filter(p=>Number.isFinite(p.lat)&&Number.isFinite(p.lon)&&Number.isFinite(p.t))
  .sort((a,b)=>a.t-b.t);
+// MOVE v1.4: calculate cumulative progress along a saved GPS route.
+// Route breaks and implausibly long GPS jumps do not add distance.
+function ghostRouteProgress(points) {
+  if (!Array.isArray(points) || !points.length) return [];
+
+  let distance = 0;
+  return points.map((point, index) => {
+    if (index > 0 && !point.break) {
+      const previous = points[index - 1];
+      const step = ghostDist(previous, point);
+      if (Number.isFinite(step) && step <= 300) distance += step;
+    }
+    return {
+      ...point,
+      progressM: distance,
+      elapsedMs: point.t - points[0].t
+    };
+  });
+}
+
 function ghostAtTime(points,ms){
  if(!points.length)return null;
  const target=points[0].t+ms;
