@@ -515,9 +515,10 @@ function syncGhostTarget(){
 }
 
 function renderGhostPace(){
- const elapsed=state==="ready"?0:Math.max(0,(state==="finished"?finishedAt:Date.now())-startedAt);
+ const active=state==="riding"||state==="paused";
+ const elapsed=active?Math.max(0,Date.now()-startedAt):0;
  const ghostKm=ghostTargetKmh*elapsed/3600000;
- const youKm=distanceM/1000;
+ const youKm=active?distanceM/1000:0;
  const factor=units==="metric"?1:MPH;
  const suffix=units==="metric"?"km":"mi";
  const maxKm=Math.max(1,Math.ceil(Math.max(youKm,ghostKm)*factor*1.1)/factor);
@@ -525,13 +526,14 @@ function renderGhostPace(){
  $("ghostYouDot").setAttribute("cx",xpos(youKm).toFixed(1));
  $("ghostTargetDot").setAttribute("cx",xpos(ghostKm).toFixed(1));
  $("ghostAxis").textContent="0 – "+(maxKm*factor).toFixed(1)+" "+suffix;
+ if(!active){$("ghostStats").textContent="Preview only · Start Ride to compare your progress.";return;}
  const difference=youKm-ghostKm;
  const gapText=Math.abs(difference)<.005?"Level with Ghost":
   (Math.abs(difference)*factor).toFixed(2)+" "+suffix+" "+(difference>0?"ahead":"behind");
  $("ghostStats").textContent=
   "You: "+(youKm*factor).toFixed(2)+" "+suffix+" · Ghost: "+(ghostKm*factor).toFixed(2)+
   " "+suffix+" · "+gapText+" · Target "+(ghostTargetKmh*factor).toFixed(1)+(units==="metric"?" km/h":" mph")+
-  (state==="ready"?" · Start a ride to begin":state==="paused"?" · Manually paused":"");
+  (state==="paused"?" · Manually paused":"");
 }
 
 const GHOST_KEY="a1sc_move_ghost_reference_v1";
@@ -565,6 +567,48 @@ function ghostDist(a,b){
  const h=Math.sin(dlat/2)**2+Math.cos(lat1)*Math.cos(lat2)*Math.sin(dlon/2)**2;
  return 2*r*Math.atan2(Math.sqrt(h),Math.sqrt(1-h));
 }
+function ghostDist(a,b){
+ const r=6371000,lat1=a.lat*Math.PI/180,lat2=b.lat*Math.PI/180;
+ const dlat=(b.lat-a.lat)*Math.PI/180,dlon=(b.lon-a.lon)*Math.PI/180;
+ const h=Math.sin(dlat/2)**2+Math.cos(lat1)*Math.cos(lat2)*Math.sin(dlon/2)**2;
+ return 2*r*Math.atan2(Math.sqrt(h),Math.sqrt(1-h));
+}
+// Find the nearest point on a saved route segment, not just the nearest GPS sample.
+// Breaks and large gaps are never bridged. A 40 m corridor avoids false lead/lag.
+function ghostMatchPosition(points,live){
+ if(!live||points.length<2)return null;
+ const rad=Math.PI/180,R=6371000;
+ let best=null,cumulative=0;
+ for(let i=1;i<points.length;i++){
+  const a=points[i-1],b=points[i];
+  const segment=ghostDist(a,b);
+  const valid=!b.break&&b.t>a.t&&b.t-a.t<=30000&&segment<=300;
+  if(valid){
+   const cos=Math.cos((a.lat+b.lat)/2*rad);
+   const vx=(b.lon-a.lon)*rad*R*cos,vy=(b.lat-a.lat)*rad*R;
+   const wx=(live.lon-a.lon)*rad*R*cos,wy=(live.lat-a.lat)*rad*R;
+   const f=Math.max(0,Math.min(1,(wx*vx+wy*vy)/Math.max(1,vx*vx+vy*vy)));
+   const off=Math.hypot(wx-f*vx,wy-f*vy);
+   if(!best||off<best.off){best={off,dist:cumulative+f*segment,refMs:(a.t-points[0].t)+f*(b.t-a.t)};}
+  }
+  if(valid)cumulative+=segment;
+ }
+ return best&&best.off<=40?best:null;
+}
+function ghostReferenceDistance(points,elapsed){
+ let total=0;
+ for(let i=1;i<points.length;i++){
+  const a=points[i-1],b=points[i];
+  if(b.t<=a.t||b.break||b.t-a.t>30000)continue;
+  const segment=ghostDist(a,b);
+  if(segment>300)continue;
+  const start=a.t-points[0].t,end=b.t-points[0].t;
+  if(elapsed<=start)break;
+  total+=segment*Math.min(1,Math.max(0,(elapsed-start)/(end-start)));
+  if(elapsed<end)break;
+ }
+ return total;
+}
 function ghostOfflineSvg(points,ghost,live){
  const lats=points.map(p=>p.lat),lons=points.map(p=>p.lon);
  if(live){lats.push(live.lat);lons.push(live.lon)}
@@ -585,18 +629,31 @@ function renderGhostRoute(){
  const ride=readRides().find(r=>r.id===ghostRideId);
  const points=ghostValidPoints(ride);
  const mapEl=$('ghostRouteMap'),fallback=$('ghostRouteFallback'),status=$('ghostRouteStatus');
- if(points.length<2){mapEl.classList.add('hidden');fallback.textContent='Select a ride with at least two GPS points.';status.textContent='Ghost Pace remains available.';return}
- const elapsed=state==='ready'?0:Math.max(0,(state==='finished'?finishedAt:Date.now())-startedAt);
+ if(points.length<2){
+  mapEl.classList.add('hidden');fallback.textContent='Select a ride with at least two GPS points.';
+  status.textContent='Ghost Pace remains available.';return;
+ }
+ const active=state==='riding'||state==='paused';
+ const elapsed=active?Math.max(0,Date.now()-startedAt):0;
  const ghost=ghostAtTime(points,elapsed);
- const live=route.length?route[route.length-1]:null;
- const nearStart=route.length&&ghostDist(route[0],points[0])<=150;
- const onRoute=nearStart;
- const routeStatus=state==='ready'?'Ready · Start your ride near the saved route’s starting point.':
-  !live?'Waiting for your live GPS position.':
-  !onRoute?'Your current ride started more than 150 m from the reference start. Route race not matched; Ghost Pace remains active.':
-  'Route replay active · Ghost time '+fmt(elapsed)+' · separation '+Math.round(ghostDist(live,ghost))+' m (straight-line, not lead/lag).';
+ const live=active&&route.length?route[route.length-1]:null;
+ const nearStart=live&&route.length&&ghostDist(route[0],points[0])<=150;
+ const match=nearStart?ghostMatchPosition(points,live):null;
+ let routeStatus='Preview only · Start Ride near the saved route’s starting point.';
+ if(active){
+  if(!live)routeStatus='Recording · Waiting for your live GPS position.';
+  else if(!nearStart)routeStatus='Route not matched · Your ride started over 150 m from the saved start. Pace mode still works.';
+  else if(!match)routeStatus='Off reference route (over 40 m) · Time comparison suspended.';
+  else{
+   const gap=elapsed-match.refMs;
+   const lead=gap<0?'ahead':gap>0?'behind':'level';
+   routeStatus='Route matched · '+(Math.abs(gap)<1000?'Level with Ghost':fmt(Math.abs(gap))+' '+lead)+
+    ' · You '+(match.dist/1000).toFixed(2)+' km / Ghost '+(ghostReferenceDistance(points,elapsed)/1000).toFixed(2)+' km';
+   if(state==='paused')routeStatus+=' · Paused';
+  }
+ }
  status.textContent=routeStatus;
- const userPoint=onRoute?live:null;
+ const userPoint=nearStart?live:null;
  if(window.L&&mapEl){
   mapEl.classList.remove('hidden');fallback.classList.add('hidden');
   if(!ghostMap){
@@ -606,8 +663,7 @@ function renderGhostRoute(){
   if(ghostMapRideId!==ride.id){
    if(ghostPath)ghostMap.removeLayer(ghostPath);
    ghostPath=L.polyline(points.map(p=>[p.lat,p.lon]),{color:'#ff279b',weight:4}).addTo(ghostMap);
-   ghostMap.fitBounds(ghostPath.getBounds(),{padding:[20,20]});
-   ghostMapRideId=ride.id;
+   ghostMap.fitBounds(ghostPath.getBounds(),{padding:[20,20]});ghostMapRideId=ride.id;
   }
   if(!ghostReplayMarker)ghostReplayMarker=L.circleMarker([ghost.lat,ghost.lon],{radius:9,color:'white',weight:2,fillColor:'#ff279b',fillOpacity:1}).addTo(ghostMap);
   ghostReplayMarker.setLatLng([ghost.lat,ghost.lon]);
@@ -615,7 +671,7 @@ function renderGhostRoute(){
    if(!ghostLiveMarker)ghostLiveMarker=L.circleMarker([userPoint.lat,userPoint.lon],{radius:11,color:'white',weight:2,fillColor:'#315fe8',fillOpacity:1}).addTo(ghostMap);
    ghostLiveMarker.setLatLng([userPoint.lat,userPoint.lon]);
    if(ghostFollow)ghostMap.panTo([userPoint.lat,userPoint.lon],{animate:false});
-  }else if(ghostLiveMarker){ghostMap.removeLayer(ghostLiveMarker);ghostLiveMarker=null}
+  }else if(ghostLiveMarker){ghostMap.removeLayer(ghostLiveMarker);ghostLiveMarker=null;}
   setTimeout(()=>ghostMap&&ghostMap.invalidateSize(),0);
  }else{
   mapEl.classList.add('hidden');fallback.classList.remove('hidden');
