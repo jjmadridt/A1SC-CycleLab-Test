@@ -192,7 +192,8 @@ button:disabled{opacity:.4}
  <div class="label">GHOST ROUTE · BLUE = YOU · PINK = GHOST</div>
  <div id="ghostRouteMap" class="hidden"></div>
  <div id="ghostRouteFallback"></div>
- <p class="note" id="ghostRouteStatus">Select a saved GPS ride to enable route comparison.</p>
+ <div id="ghostTimeGap" role="status" aria-live="polite" style="font-size:25px;font-weight:800;text-align:center;margin:12px 0;color:#aabbc5">TIME GAP · WAITING</div>
+  <p class="note" id="ghostRouteStatus">Select a saved GPS ride to enable route comparison.</p>
  <button id="ghostFollow" type="button" style="background:#303B59;color:white;border:1px solid #52646e;border-radius:9px;padding:10px">Follow my position: ON</button>
 </div>
 <p class="note">Choose a saved GPS ride for route replay. Ghost Pace remains available above.</p>
@@ -584,13 +585,25 @@ function ghostOfflineSvg(points,ghost,live){
 function renderGhostRoute(){
  const ride=readRides().find(r=>r.id===ghostRideId);
  const points=ghostValidPoints(ride);
- const mapEl=$('ghostRouteMap'),fallback=$('ghostRouteFallback'),status=$('ghostRouteStatus');
- if(points.length<2){mapEl.classList.add('hidden');fallback.textContent='Select a ride with at least two GPS points.';status.textContent='Ghost Pace remains available.';return}
+ const mapEl=$('ghostRouteMap'),fallback=$('ghostRouteFallback'),status=$('ghostRouteStatus'),gapEl=$('ghostTimeGap');
+ if(points.length<2){gapEl.textContent='TIME GAP · SELECT ROUTE';gapEl.style.color='#aabbc5';mapEl.classList.add('hidden');fallback.textContent='Select a ride with at least two GPS points.';status.textContent='Ghost Pace remains available.';return}
  const elapsed=state==='ready'?0:Math.max(0,(state==='finished'?finishedAt:Date.now())-startedAt);
  const ghost=ghostAtTime(points,elapsed);
  const live=route.length?route[route.length-1]:null;
  const nearStart=route.length&&ghostDist(route[0],points[0])<=150;
  const onRoute=nearStart;
+ const progressPoints=ghostRouteProgress(points);
+ const gap=(onRoute && state!=='ready' && route.length>=2)?ghostTimeGap(progressPoints,route,startedAt):null;
+ if(gap && Number.isFinite(gap.aheadSeconds)){
+   const secs=Math.round(Math.abs(gap.aheadSeconds));
+   const clock=String(Math.floor(secs/60)).padStart(2,'0')+':'+String(secs%60).padStart(2,'0');
+   const lead=gap.aheadSeconds>0.5,behind=gap.aheadSeconds< -0.5;
+   gapEl.textContent=lead?'AHEAD +'+clock:behind?'BEHIND −'+clock:'EVEN · 00:00';
+   gapEl.style.color=lead?'#48d99d':behind?'#ff80c4':'#ffffff';
+ }else{
+   gapEl.textContent=state==='ready'?'TIME GAP · READY':!onRoute?'TIME GAP · ROUTE NOT MATCHED':'TIME GAP · GPS MATCH UNAVAILABLE';
+   gapEl.style.color='#aabbc5';
+ }
  const routeStatus=state==='ready'?'Ready · Start your ride near the saved route’s starting point.':
   !live?'Waiting for your live GPS position.':
   !onRoute?'Your current ride started more than 150 m from the reference start. Route race not matched; Ghost Pace remains active.':
