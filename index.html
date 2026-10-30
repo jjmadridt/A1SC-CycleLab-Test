@@ -208,6 +208,40 @@ const STORE_KEY="a1sc_move_rides_v1";
 let route=[],routeBreak=true,selectedRideId=null;
 let storageAvailable=true;
 
+// Keep the display awake during an active ride (including manual/auto-pause).
+// Browsers may release the lock when the page is hidden or the battery is low.
+let rideWakeLock=null;
+let wakeRequestPending=false;
+const rideIsActive=()=>state==="riding"||state==="paused";
+async function requestRideWakeLock(){
+ if(!rideIsActive()||document.visibilityState!=="visible"||
+    !("wakeLock" in navigator)||rideWakeLock||wakeRequestPending)return;
+ wakeRequestPending=true;
+ try{
+  const lock=await navigator.wakeLock.request("screen");
+  if(!rideIsActive()||document.visibilityState!=="visible"){
+   await lock.release();
+   return;
+  }
+  rideWakeLock=lock;
+  lock.addEventListener("release",()=>{
+   if(rideWakeLock===lock)rideWakeLock=null;
+  });
+ }catch(err){
+  // Unsupported/restricted devices continue recording without a wake lock.
+  console.debug("MOVE screen wake lock unavailable:",err);
+ }finally{wakeRequestPending=false;}
+}
+function releaseRideWakeLock(){
+ const lock=rideWakeLock;
+ rideWakeLock=null;
+ if(lock)lock.release().catch(()=>{});
+}
+document.addEventListener("visibilitychange",()=>{
+ if(document.visibilityState==="visible"&&rideIsActive())requestRideWakeLock();
+});
+window.addEventListener("pagehide",releaseRideWakeLock);
+
 function readRides(){
  try {
   const a=JSON.parse(localStorage.getItem(STORE_KEY)||"[]");
@@ -891,6 +925,7 @@ $("control").onclick=()=>{
  finishedAt=0;
  lastTick=now;
  state="riding";
+ requestRideWakeLock();
  $("message").textContent="Connecting to GPS...";
  startGPS();
  render();
@@ -918,6 +953,7 @@ $("finish").onclick=()=>{
  if(state==="ready"||state==="finished")return;
  finishedAt=Date.now();
  state="finished";
+ releaseRideWakeLock();
  stopTracking();
  const saved=saveRide();
  $("message").textContent=saved?
