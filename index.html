@@ -7,7 +7,7 @@
 <meta name="theme-color" content="#090B12">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="icon" type="image/png" href="./move-icon-192.png">
-<link rel="apple-touch-icon" href="./move-icon-192.png"><title>MOVE by A1SC · 1.0</title>
+<link rel="apple-touch-icon" href="./move-icon-192.png"><title>MOVE by A1SC · 1.1</title>
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#090B12;color:#fff;font-family:Arial,Helvetica,sans-serif}
@@ -53,14 +53,19 @@ button:disabled{opacity:.4}
 .navinner{max-width:520px;margin:auto;display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
 .nav button{background:none;border:0;color:#aabbc5;padding:12px 4px;font-size:13px}
 .nav button.active{background:#242D50;color:#FF279B;border-radius:10px;font-weight:700}
+#ghostRouteMap{height:310px;border-radius:12px;background:#101728;overflow:hidden;margin-top:10px}
+#ghostRouteFallback svg{width:100%;height:310px;display:block}
+#ghostRouteStatus{margin-top:8px}
 </style>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+<script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 </head>
 <body>
 <main class="app">
 <header class="top">
 <div>
 <div class="brand">MOVE <span style="font-size:11px;color:#ff279b;letter-spacing:0">By A1SC</span></div>
-<div class="sub">LIVE GPS · VERSION 0.9</div>
+<div class="sub">LIVE GPS · VERSION 1.1</div>
 </div>
 <span class="status" id="status">READY</span>
 </header>
@@ -150,7 +155,14 @@ button:disabled{opacity:.4}
  <p id="ghostRideStatus" class="note">Ready to record a ride.</p>
  <p class="note">Ghost progresses using total elapsed time, including manual pauses. Your distance remains frozen while paused.</p>
 </div>
-<p class="note">Optional: select a saved ride to preview its GPS route. Same-route map racing will be added later.</p>
+<div class="panel" style="margin-bottom:14px">
+ <div class="label">GHOST ROUTE · BLUE = YOU · PINK = GHOST</div>
+ <div id="ghostRouteMap" class="hidden"></div>
+ <div id="ghostRouteFallback"></div>
+ <p class="note" id="ghostRouteStatus">Select a saved GPS ride to enable route comparison.</p>
+ <button id="ghostFollow" type="button" style="background:#303B59;color:white;border:1px solid #52646e;border-radius:9px;padding:10px">Follow my position: ON</button>
+</div>
+<p class="note">Choose a saved GPS ride for route replay. Ghost Pace remains available above.</p>
 <label class="label" for="ghostRideSelect">REFERENCE RIDE</label>
 <select id="ghostRideSelect" style="display:block;width:100%;padding:14px;margin:10px 0 14px;background:#171C2B;color:#fff;border:1px solid #52646e;border-radius:12px;font-size:15px"></select>
 <div id="ghostPreview" class="panel">Select a ride to preview its route.</div>
@@ -391,6 +403,92 @@ const GHOST_KEY="a1sc_move_ghost_reference_v1";
 let ghostRideId=null;
 try { ghostRideId=localStorage.getItem(GHOST_KEY); } catch(e) {}
 
+// Ghost Route: replay the reference GPS samples by their recorded timestamps.
+// No new ride data is stored; the reference is read from existing History.
+let ghostMap=null,ghostPath=null,ghostLiveMarker=null,ghostReplayMarker=null;
+let ghostFollow=true,ghostMapRideId=null,ghostMapReady=false;
+const ghostValidPoints=ride=>(Array.isArray(ride?.route)?ride.route:[])
+ .filter(p=>Number.isFinite(p.lat)&&Number.isFinite(p.lon)&&Number.isFinite(p.t))
+ .sort((a,b)=>a.t-b.t);
+function ghostAtTime(points,ms){
+ if(!points.length)return null;
+ const target=points[0].t+ms;
+ if(target<=points[0].t)return points[0];
+ for(let i=1;i<points.length;i++){
+  const b=points[i],a=points[i-1];
+  if(target<=b.t){
+   if(b.break||b.t<=a.t)return a;
+   const f=(target-a.t)/(b.t-a.t);
+   return {lat:a.lat+(b.lat-a.lat)*f,lon:a.lon+(b.lon-a.lon)*f};
+  }
+ }
+ return points[points.length-1];
+}
+function ghostDist(a,b){
+ const r=6371000,lat1=a.lat*Math.PI/180,lat2=b.lat*Math.PI/180;
+ const dlat=(b.lat-a.lat)*Math.PI/180,dlon=(b.lon-a.lon)*Math.PI/180;
+ const h=Math.sin(dlat/2)**2+Math.cos(lat1)*Math.cos(lat2)*Math.sin(dlon/2)**2;
+ return 2*r*Math.atan2(Math.sqrt(h),Math.sqrt(1-h));
+}
+function ghostOfflineSvg(points,ghost,live){
+ const lats=points.map(p=>p.lat),lons=points.map(p=>p.lon);
+ if(live){lats.push(live.lat);lons.push(live.lon)}
+ const minLat=Math.min(...lats),maxLat=Math.max(...lats),minLon=Math.min(...lons),maxLon=Math.max(...lons);
+ const cos=Math.max(.01,Math.cos((minLat+maxLat)/2*Math.PI/180));
+ const dx=Math.max((maxLon-minLon)*cos,.00001),dy=Math.max(maxLat-minLat,.00001);
+ const scale=Math.min(290/dx,260/dy),ox=(320-(maxLon-minLon)*cos*scale)/2,oy=(300-(maxLat-minLat)*scale)/2;
+ const xy=p=>[(ox+(p.lon-minLon)*cos*scale).toFixed(1),(oy+(maxLat-p.lat)*scale).toFixed(1)];
+ let paths=[],cur=[];
+ points.forEach(p=>{if(p.break&&cur.length){paths.push(cur);cur=[]}cur.push(xy(p).join(','))});
+ if(cur.length)paths.push(cur);
+ const lines=paths.map(seg=>'<polyline points="'+seg.join(' ')+'" fill="none" stroke="#ff279b" stroke-width="3"/>').join('');
+ const dot=(p,color,r)=>p?'<circle cx="'+xy(p)[0]+'" cy="'+xy(p)[1]+'" r="'+r+'" fill="'+color+'" stroke="white" stroke-width="2"/>':'';
+ return '<svg viewBox="0 0 320 300" role="img" aria-label="Offline GPS route comparison">'+
+ '<rect width="320" height="300" fill="#101728"/>'+lines+dot(ghost,'#ff279b',7)+dot(live,'#315fe8',9)+'</svg>';
+}
+function renderGhostRoute(){
+ const ride=readRides().find(r=>r.id===ghostRideId);
+ const points=ghostValidPoints(ride);
+ const mapEl=$('ghostRouteMap'),fallback=$('ghostRouteFallback'),status=$('ghostRouteStatus');
+ if(points.length<2){mapEl.classList.add('hidden');fallback.textContent='Select a ride with at least two GPS points.';status.textContent='Ghost Pace remains available.';return}
+ const elapsed=state==='ready'?0:Math.max(0,(state==='finished'?finishedAt:Date.now())-startedAt);
+ const ghost=ghostAtTime(points,elapsed);
+ const live=route.length?route[route.length-1]:null;
+ const nearStart=route.length&&ghostDist(route[0],points[0])<=150;
+ const onRoute=nearStart;
+ const routeStatus=state==='ready'?'Ready · Start your ride near the saved route’s starting point.':
+  !live?'Waiting for your live GPS position.':
+  !onRoute?'Your current ride started more than 150 m from the reference start. Route race not matched; Ghost Pace remains active.':
+  'Route replay active · Ghost time '+fmt(elapsed)+' · separation '+Math.round(ghostDist(live,ghost))+' m (straight-line, not lead/lag).';
+ status.textContent=routeStatus;
+ const userPoint=onRoute?live:null;
+ if(window.L&&mapEl){
+  mapEl.classList.remove('hidden');fallback.classList.add('hidden');
+  if(!ghostMap){
+   ghostMap=L.map(mapEl,{zoomControl:true});
+   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap contributors'}).addTo(ghostMap);
+  }
+  if(ghostMapRideId!==ride.id){
+   if(ghostPath)ghostMap.removeLayer(ghostPath);
+   ghostPath=L.polyline(points.map(p=>[p.lat,p.lon]),{color:'#ff279b',weight:4}).addTo(ghostMap);
+   ghostMap.fitBounds(ghostPath.getBounds(),{padding:[20,20]});
+   ghostMapRideId=ride.id;
+  }
+  if(!ghostReplayMarker)ghostReplayMarker=L.circleMarker([ghost.lat,ghost.lon],{radius:9,color:'white',weight:2,fillColor:'#ff279b',fillOpacity:1}).addTo(ghostMap);
+  ghostReplayMarker.setLatLng([ghost.lat,ghost.lon]);
+  if(userPoint){
+   if(!ghostLiveMarker)ghostLiveMarker=L.circleMarker([userPoint.lat,userPoint.lon],{radius:11,color:'white',weight:2,fillColor:'#315fe8',fillOpacity:1}).addTo(ghostMap);
+   ghostLiveMarker.setLatLng([userPoint.lat,userPoint.lon]);
+   if(ghostFollow)ghostMap.panTo([userPoint.lat,userPoint.lon],{animate:false});
+  }else if(ghostLiveMarker){ghostMap.removeLayer(ghostLiveMarker);ghostLiveMarker=null}
+  setTimeout(()=>ghostMap&&ghostMap.invalidateSize(),0);
+ }else{
+  mapEl.classList.add('hidden');fallback.classList.remove('hidden');
+  fallback.innerHTML=ghostOfflineSvg(points,ghost,userPoint);
+ }
+}
+$('ghostFollow').onclick=()=>{ghostFollow=!ghostFollow;$('ghostFollow').textContent='Follow my position: '+(ghostFollow?'ON':'OFF');renderGhostRoute()};
+
 function renderGhost(){
  const select=$("ghostRideSelect"), preview=$("ghostPreview");
  const rides=readRides().filter(r=>Array.isArray(r.route)&&r.route.some(p=>
@@ -411,6 +509,7 @@ function renderGhost(){
  select.value=ghostRideId||"";
  const ride=rides.find(r=>r.id===ghostRideId);
  if(!ride){
+  renderGhostRoute();
   preview.textContent=rides.length?"No reference selected. Ghost Pace works without one.":
    "No saved GPS route yet. Ghost Pace is ready without one.";
   return;
@@ -427,9 +526,10 @@ function renderGhost(){
  const info=document.createElement("p");
  info.className="note";
  info.textContent=ghostTargetMode==="reference"?
-  "Ghost Pace target calculated from this ride’s distance and riding time. Route map comparison is planned for a later version.":
-  "This ride has no usable average speed, or you adjusted the target manually. Route map comparison is planned for a later version.";
+  "Ghost Pace target calculated from this ride’s distance and riding time. Route replay is available above.":
+  "This ride has no usable average speed, or you adjusted the target manually. Route replay is available above.";
  preview.appendChild(info);
+ renderGhostRoute();
 }
 
 $("ghostRideSelect").onchange=()=>{
@@ -838,6 +938,7 @@ setInterval(()=>{
  $("elapsedTime").textContent=fmt(elapsed);
  render();
  renderGhostPace();
+ if(!$('partner').classList.contains('hidden'))renderGhostRoute();
 },500);
 
 document.querySelectorAll("[data-page]").forEach(btn=>{
@@ -858,6 +959,7 @@ renderHistory();
 syncGhostTarget();
 renderGhost();
 renderGhostPace();
+renderGhostRoute();
 </script>
 
 <script>
