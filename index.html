@@ -301,6 +301,7 @@ let currentKmh=0,moving=false;
 let lastFix=null,lastFixAt=0,lastReceivedAt=0;
 let candidateSince=0,candidateMoving=null;
 let lastAltitude=null,altitudeBuffer=0;
+let altitudeSamples=[],climbAnchor=null;
 const STORE_KEY="a1sc_move_rides_v1";
 let route=[],routeBreak=true,selectedRideId=null;
 let storageAvailable=true;
@@ -778,6 +779,7 @@ function reset(){
  lastFix=null;lastFixAt=0;lastReceivedAt=0;
  candidateSince=0;candidateMoving=null;
  lastAltitude=null;altitudeBuffer=0;
+ altitudeSamples=[];climbAnchor=null;
  route=[];routeBreak=true;
  $("accuracy").textContent="Waiting";
 }
@@ -848,6 +850,7 @@ function clearMotion(){
  lastReceivedAt=0;
  lastAltitude=null;
  altitudeBuffer=0;
+ altitudeSamples=[];climbAnchor=null;
 }
 
 function gpsSuccess(pos){
@@ -935,28 +938,37 @@ function gpsSuccess(pos){
   }
  }
 
- if(moving&&c.accuracy<=20&&
-    Number.isFinite(c.altitude)&&
-    Number.isFinite(c.altitudeAccuracy)&&
-    c.altitudeAccuracy<=12){
-  if(lastAltitude!==null&&dt>0&&dt<=12){
-   const diff=c.altitude-lastAltitude;
-   if(Math.abs(diff)<8){
-    altitudeBuffer+=diff;
-    if(altitudeBuffer>=3){
-     gainM+=altitudeBuffer;
-     altitudeBuffer=0;
-    }else if(altitudeBuffer<=-3){
-     altitudeBuffer=0;
+ // Elevation: horizontal GPS accuracy is not vertical accuracy. Some Android
+ // browsers supply altitude but omit altitudeAccuracy, so do not reject it.
+ // Use a rolling median and a 3 m climb threshold to suppress GPS jitter.
+ if(moving&&c.accuracy<=20&&Number.isFinite(c.altitude)&&
+    (!Number.isFinite(c.altitudeAccuracy)||c.altitudeAccuracy<=35)){
+  const alt=c.altitude;
+  if(lastAltitude!==null&&dt>0&&dt<=12&&Math.abs(alt-lastAltitude)>12){
+   // An implausible vertical jump is likely GPS noise; restart this segment.
+   altitudeSamples=[];
+   climbAnchor=null;
+  }else{
+   altitudeSamples.push(alt);
+   if(altitudeSamples.length>5)altitudeSamples.shift();
+   if(altitudeSamples.length>=3){
+    const sorted=[...altitudeSamples].sort((a,b)=>a-b);
+    const filtered=sorted[Math.floor(sorted.length/2)];
+    if(climbAnchor===null)climbAnchor=filtered;
+    const change=filtered-climbAnchor;
+    if(change>=3){
+     gainM+=change;
+     climbAnchor=filtered;
+    }else if(change<=-3){
+     climbAnchor=filtered;
     }
-   }else{
-    altitudeBuffer=0;
    }
   }
-  lastAltitude=c.altitude;
+  lastAltitude=alt;
  }else{
   lastAltitude=null;
-  altitudeBuffer=0;
+  altitudeSamples=[];
+  climbAnchor=null;
  }
 
  lastFix=c;
