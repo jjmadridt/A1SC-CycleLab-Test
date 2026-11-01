@@ -257,6 +257,13 @@ const MPH=0.6213711922;
 // Detect the existing language preference when available; fall back to device language.
 // MOVE does not currently expose its own language selector.
 function moveDeleteLanguage(){
+  // An explicit language passed by Train Lab takes precedence, when available.
+  // This step only detects a preference; it does not change the MOVE interface.
+  try {
+   const requested=new URLSearchParams(window.location.search).get("lang");
+   if(requested==="en"||requested==="es")return requested;
+  }catch(e){}
+ // Train Lab's Home ENG/ESP selector is saved inside fitclimb-v1.
  // Train Lab's Home ENG/ESP selector is saved inside fitclimb-v1.
  // Both PWAs are hosted on the same GitHub Pages origin.
  try {
