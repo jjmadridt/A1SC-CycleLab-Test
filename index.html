@@ -253,6 +253,32 @@ button:disabled{opacity:.4}
 <script>
 const $=id=>document.getElementById(id);
 const MPH=0.6213711922;
+// Ride screen only: translate visible copy without changing recording logic.
+const MOVE_RIDE_ES = moveDeleteLanguage() === "es";
+const rideText = (english, spanish) => MOVE_RIDE_ES ? spanish : english;
+function translateRideStatic(){
+ const ride = $("ride");
+ const translations = new Map([
+  ["CURRENT SPEED","VELOCIDAD ACTUAL"],
+  ["AVERAGE SPEED","VELOCIDAD PROMEDIO"],
+  ["RIDING TIME","TIEMPO PEDALEANDO"],
+  ["ELEVATION GAIN","DESNIVEL POSITIVO"],
+  ["DISTANCE","DISTANCIA"],
+  ["Total elapsed time","Tiempo total transcurrido"],
+  ["GPS accuracy","Precisión GPS"],
+  ["Testing version. Keep MOVE visible while recording. Elevation gain is experimental. Finished rides are saved in this browser; export GPX files for backup.",
+   "Versión de prueba. Mantén MOVE visible durante la grabación. El desnivel positivo es experimental. Las rodadas finalizadas se guardan en este navegador; exporta archivos GPX como respaldo."]
+ ]);
+ if(MOVE_RIDE_ES){
+  ride.querySelectorAll(".label, .secondary span, p.note:not(#message)").forEach(el=>{
+   if(translations.has(el.textContent.trim())) el.textContent=translations.get(el.textContent.trim());
+  });
+  $("trainLabHome").textContent="⌂ Inicio";
+  $("trainLabHome").setAttribute("aria-label","Inicio — Train Lab");
+ }
+ document.documentElement.lang = MOVE_RIDE_ES ? "es" : "en";
+}
+
 
 // Detect the existing language preference when available; fall back to device language.
 // MOVE does not currently expose its own language selector.
@@ -870,7 +896,7 @@ function reset(){
  lastAltitude=null;altitudeBuffer=0;
  altitudeSamples=[];climbAnchor=null;
  route=[];routeBreak=true;
- $("accuracy").textContent="Waiting";
+ $("accuracy").textContent=rideText("Waiting","Esperando");
 }
 
 function render(){
@@ -886,15 +912,17 @@ function render(){
  $("metricBtn").classList.toggle("active",units==="metric");
  $("imperialBtn").classList.toggle("active",units==="imperial");
  $("status").textContent=state==="riding"?
- (moving?"RIDING":"AUTO PAUSED"):state.toUpperCase();
- $("control").textContent="Start Ride";
+  (moving?rideText("RIDING","PEDALEANDO"):rideText("AUTO PAUSED","PAUSA AUTOMÁTICA")):
+  (MOVE_RIDE_ES?({ready:"LISTO",paused:"EN PAUSA",finished:"FINALIZADO"}[state]||state.toUpperCase()):state.toUpperCase());
+ $("control").textContent=rideText("Start Ride","Iniciar rodada");
  $("control").disabled=state==="riding"||state==="paused";
  $("pause").disabled=state==="ready"||state==="finished";
- $("pause").textContent=state==="paused"?"Resume":"Pause";
+ $("pause").textContent=state==="paused"?rideText("Resume","Reanudar"):rideText("Pause","Pausar");
  $("finish").disabled=state==="ready"||state==="finished";
+  $("finish").textContent=rideText("Finish","Finalizar");
  $("ghostStart").disabled=$("control").disabled;
  $("ghostPause").disabled=$("pause").disabled;
- $("ghostPause").textContent=$("pause").textContent;
+ $("ghostPause").textContent=state==="paused"?"Resume":"Pause";
  $("ghostFinish").disabled=$("finish").disabled;
  $("ghostRideStatus").textContent=state==="riding"?"Recording ride · GPS status: "+$("status").textContent:
   state==="paused"?"Manually paused · elapsed time continues":
@@ -951,7 +979,7 @@ function gpsSuccess(pos){
  if(now-t>10000||c.accuracy>35){
   routeBreak=true;
   clearMotion();
-  $("message").textContent="Waiting for accurate, fresh GPS.";
+  $("message").textContent=rideText("Waiting for accurate, fresh GPS.","Esperando señal GPS reciente y precisa.");
   render();
   return;
  }
@@ -1063,8 +1091,8 @@ function gpsSuccess(pos){
  lastFix=c;
  lastFixAt=t;
  $("message").textContent=moving?
- "GPS active · Movement detected":
- "GPS active · Waiting for movement";
+  rideText("GPS active · Movement detected","GPS activo · Movimiento detectado"):
+  rideText("GPS active · Waiting for movement","GPS activo · Esperando movimiento");
  render();
 }
 
@@ -1072,8 +1100,8 @@ function gpsError(error){
  if(state!=="riding")return;
  routeBreak=true;
  clearMotion();
- $("accuracy").textContent="Unavailable";
- $("message").textContent="GPS: "+error.message;
+ $("accuracy").textContent=rideText("Unavailable","No disponible");
+ $("message").textContent=rideText("GPS: ","GPS: ")+error.message;
  if(error.code===1){
   state="paused";
   stopGPS();
@@ -1084,7 +1112,7 @@ function gpsError(error){
 function startGPS(){
  if(!navigator.geolocation){
   state="paused";
-  $("message").textContent="Geolocation not supported.";
+  $("message").textContent=rideText("Geolocation not supported.","Este dispositivo no admite geolocalización.");
   render();
   return;
  }
@@ -1109,7 +1137,7 @@ function stopTracking(){
 const TRAIN_LAB_HOME="https://jjmadridt.github.io/A1SC-TrainLab-Test/";
 $("trainLabHome").onclick=()=>{
  if((state==="riding"||state==="paused")&&
-    !window.confirm("A ride is in progress. Leaving MOVE may stop GPS recording and your unsaved ride may be lost. Finish and save your ride before leaving. Leave anyway?"))return;
+    !window.confirm(rideText("A ride is in progress. Leaving MOVE may stop GPS recording and your unsaved ride may be lost. Finish and save your ride before leaving. Leave anyway?","Hay una rodada en curso. Salir de MOVE puede detener el GPS y perder la rodada sin guardar. Finaliza y guarda antes de salir. ¿Salir de todos modos?")))return;
  window.location.assign(TRAIN_LAB_HOME);
 };
 
@@ -1123,7 +1151,7 @@ $("control").onclick=()=>{
  lastTick=now;
  state="riding";
  requestRideWakeLock();
- $("message").textContent="Connecting to GPS...";
+ $("message").textContent=rideText("Connecting to GPS...","Conectando al GPS...");
  startGPS();
  render();
 };
@@ -1134,13 +1162,13 @@ $("pause").onclick=()=>{
   state="paused";
   routeBreak=true;
   stopTracking();
-  $("message").textContent="Manually paused. Elapsed time continues.";
+  $("message").textContent=rideText("Manually paused. Elapsed time continues.","Pausa manual. El tiempo total sigue avanzando.");
  }else if(state==="paused"){
   state="riding";
   lastTick=now;
   routeBreak=true;
   clearMotion();
-  $("message").textContent="Reconnecting to GPS...";
+  $("message").textContent=rideText("Reconnecting to GPS...","Reconectando al GPS...");
   startGPS();
  }
  render();
@@ -1154,8 +1182,8 @@ $("finish").onclick=()=>{
  stopTracking();
  const saved=saveRide();
  $("message").textContent=saved?
-  "Ride saved! Open History to view your route and export GPX.":
-  "Storage failed. This ride was NOT saved. Check browser storage settings.";
+  rideText("Ride saved! Open History to view your route and export GPX.","¡Rodada guardada! Abre Historial para ver tu ruta y exportar GPX."):
+  rideText("Storage failed. This ride was NOT saved. Check browser storage settings.","Error de almacenamiento. NO se guardó esta rodada. Revisa el almacenamiento del navegador.");
  renderHistory();
  render();
 };
@@ -1172,7 +1200,7 @@ setInterval(()=>{
  if(state==="riding"&&lastReceivedAt&&!fresh){
   routeBreak=true;
   clearMotion();
-  $("message").textContent="GPS signal interrupted. Timer paused.";
+  $("message").textContent=rideText("GPS signal interrupted. Timer paused.","Se interrumpió la señal GPS. Temporizador en pausa.");
  }
 
  $("ridingTime").textContent=fmt(ridingMs);
@@ -1197,6 +1225,8 @@ document.querySelectorAll("[data-page]").forEach(btn=>{
   );
  };
 });
+translateRideStatic();
+if(MOVE_RIDE_ES) $("message").textContent="GPS inactivo. Pulsa Iniciar rodada.";
 render();
 renderHistory();
 syncGhostTarget();
