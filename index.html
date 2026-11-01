@@ -141,7 +141,7 @@ button:disabled{opacity:.4}
 <div>
 <img class="move-header-logo" src="./move-header-logo.png" alt="MOVE by A1SC">
 </div>
-<div class="headerActions"><button class="homeBtn" id="trainLabHome" type="button" aria-label="Home — Train Lab">⌂ Home</button><span class="status" id="status" aria-hidden="true">READY</span></div>
+<div class="headerActions"><button id="moveLanguage" type="button" class="homeBtn" aria-label="Switch language">ESP</button><button class="homeBtn" id="trainLabHome" type="button" aria-label="Home — Train Lab">⌂ Home</button><span class="status" id="status" aria-hidden="true">READY</span></div>
 </header>
 
 <section id="ride">
@@ -257,6 +257,10 @@ const MPH=0.6213711922;
 // Detect the existing language preference when available; fall back to device language.
 // MOVE does not currently expose its own language selector.
 function moveDeleteLanguage(){
+ const selected=localStorage.getItem("move_ui_language");
+ if(selected==="en"||selected==="es")return selected;
+ const param=new URLSearchParams(location.search).get("lang");
+ if(param==="en"||param==="es")return param;
  // Train Lab's Home ENG/ESP selector is saved inside fitclimb-v1.
  // Both PWAs are hosted on the same GitHub Pages origin.
  try {
@@ -271,8 +275,7 @@ function moveDeleteLanguage(){
    if(v==="en"||v.startsWith("en-")||v==="english")return "en";
   }catch(e){}
  }
- const pageLang=(document.documentElement.lang||"").toLowerCase();
- if(pageLang.startsWith("es"))return "es";
+
  return (navigator.language||"en").toLowerCase().startsWith("es")?"es":"en";
 }
 function confirmMoveRideDelete(onDelete){
@@ -1196,6 +1199,148 @@ syncGhostTarget();
 renderGhost();
 renderGhostPace();
 renderGhostRoute();
+</script>
+
+<script>
+/* MOVE bilingual UI layer. No GPS, ride storage, Ghost calculations, or recording logic changed. */
+(()=>{
+ const dictionary={
+ 'Home':'Inicio','CURRENT SPEED':'VELOCIDAD ACTUAL','AVERAGE SPEED':'VELOCIDAD PROMEDIO','RIDING TIME':'TIEMPO PEDALEANDO','ELEVATION GAIN':'DESNIVEL ACUMULADO','DISTANCE':'DISTANCIA',
+ 'Total elapsed time':'Tiempo total transcurrido','GPS accuracy':'Precisión GPS','Waiting':'Esperando','Unavailable':'No disponible',
+ 'Start Ride':'Iniciar rodada','Pause':'Pausar','Resume':'Reanudar','Finish':'Finalizar','Ride History':'Historial de rodadas',
+ 'Ride':'Rodada','History':'Historial','Ghost':'Ghost','Return':'Regresar','Return to Origin':'Regresar al origen',
+ 'Return navigation will follow reliable route recording.':'La navegación de regreso estará disponible cuando el registro de rutas sea confiable.',
+ 'GPS inactive. Press Start Ride.':'GPS inactivo. Pulsa Iniciar rodada.',
+ 'Testing version. Keep MOVE visible while recording. Elevation gain is experimental. Finished rides are saved in this browser; export GPX files for backup.':'Versión de prueba. Mantén MOVE visible mientras grabas. El desnivel acumulado es experimental. Las rodadas terminadas se guardan en este navegador; exporta archivos GPX como respaldo.',
+ 'Finished rides are stored on this device and browser only. Export GPX files to keep independent backups.':'Las rodadas terminadas se guardan solo en este dispositivo y navegador. Exporta archivos GPX para conservar respaldos independientes.',
+ 'GHOST TARGET SPEED (km/h)':'VELOCIDAD OBJETIVO GHOST (km/h)','GHOST TARGET SPEED (mph)':'VELOCIDAD OBJETIVO GHOST (mph)',
+ 'Manual target · saved for future rides':'Objetivo manual · guardado para futuras rodadas',
+ 'Calculated from selected ride · Tap to override':'Calculado de la rodada seleccionada · Toca para modificar',
+ 'Manual override for selected ride · original ride unchanged':'Ajuste manual para la rodada seleccionada · la original no cambia',
+ 'BLUE = YOU':'AZUL = TÚ','PINK = GHOST':'ROSA = GHOST','GHOST ROUTE · BLUE = YOU · PINK = GHOST':'RUTA GHOST · AZUL = TÚ · ROSA = GHOST',
+ 'Start a ride to compare your progress.':'Inicia una rodada para comparar tu avance.',
+ 'Preview only · Start Ride to compare your progress.':'Solo vista previa · Inicia una rodada para comparar tu avance.',
+ 'Select a saved GPS ride to enable route comparison.':'Selecciona una rodada GPS guardada para comparar rutas.',
+ 'Follow my position: ON':'Seguir mi posición: SÍ','Follow my position: OFF':'Seguir mi posición: NO',
+ 'Ready to record a ride.':'Listo para grabar una rodada.','REFERENCE RIDE':'RODADA DE REFERENCIA',
+ 'Reference ride details':'Detalles de la rodada de referencia','Select a ride to preview its route.':'Selecciona una rodada para ver su ruta.',
+ 'Choose a saved GPS ride':'Elige una rodada GPS guardada','No GPS rides available':'No hay rodadas GPS disponibles',
+ 'No reference selected. Ghost Pace works without one.':'No hay referencia seleccionada. Ghost Pace funciona sin ella.',
+ 'No saved GPS route yet. Ghost Pace is ready without one.':'Aún no hay rutas GPS guardadas. Ghost Pace está listo sin ellas.',
+ 'No accurate GPS route points were recorded.':'No se registraron puntos GPS precisos.',
+ 'Ghost Pace remains available.':'Ghost Pace sigue disponible.','Select a ride with at least two GPS points.':'Selecciona una rodada con al menos dos puntos GPS.',
+ 'Preview only · Start Ride near the saved route’s starting point.':'Solo vista previa · Inicia cerca del punto de partida de la ruta guardada.',
+ 'Recording · Waiting for your live GPS position.':'Grabando · Esperando tu posición GPS actual.',
+ 'Route not matched · Your ride started over 150 m from the saved start. Pace mode still works.':'Ruta sin coincidencia · Iniciaste a más de 150 m del punto de partida guardado. El modo ritmo sigue funcionando.',
+ 'Off reference route (over 40 m) · Time comparison suspended.':'Fuera de la ruta de referencia (más de 40 m) · Comparación de tiempo suspendida.',
+ 'No finished rides saved yet. Start and finish a test ride to create one.':'Aún no hay rodadas terminadas. Inicia y finaliza una rodada de prueba para crear una.',
+ 'Export GPX':'Exportar GPX','Delete ride':'Eliminar rodada',
+ 'This ride has no GPS points to export.':'Esta rodada no tiene puntos GPS para exportar.',
+ 'Ghost selection could not be saved in browser storage.':'No se pudo guardar la selección Ghost en el navegador.',
+ 'Unable to delete ride from browser storage.':'No se pudo eliminar la rodada del navegador.',
+ 'GPS active · Movement detected':'GPS activo · Movimiento detectado',
+ 'GPS active · Waiting for movement':'GPS activo · Esperando movimiento',
+ 'Waiting for accurate, fresh GPS.':'Esperando señal GPS reciente y precisa.',
+ 'Geolocation not supported.':'Geolocalización no disponible.',
+ 'Connecting to GPS...':'Conectando al GPS...','Reconnecting to GPS...':'Reconectando al GPS...',
+ 'Manually paused. Elapsed time continues.':'Pausa manual. El tiempo total sigue corriendo.',
+ 'Ride saved! Open History to view your route and export GPX.':'¡Rodada guardada! Abre Historial para ver la ruta y exportar GPX.',
+ 'Storage failed. This ride was NOT saved. Check browser storage settings.':'Error de almacenamiento. Esta rodada NO se guardó. Revisa la configuración del navegador.',
+ 'GPS signal interrupted. Timer paused.':'Se interrumpió la señal GPS. Cronómetro pausado.',
+ 'READY':'LISTO','RIDING':'PEDALEANDO','PAUSED':'PAUSADO','FINISHED':'FINALIZADO','AUTO PAUSED':'PAUSA AUTOMÁTICA',
+ 'Recording ride · GPS status:':'Grabando rodada · Estado GPS:',
+ 'Manually paused · elapsed time continues':'Pausa manual · el tiempo total sigue corriendo',
+ 'A ride is in progress. Leaving MOVE may stop GPS recording and your unsaved ride may be lost. Finish and save your ride before leaving. Leave anyway?':'Hay una rodada en curso. Salir de MOVE puede detener el GPS y perder la rodada sin guardar. Finaliza y guarda antes de salir. ¿Salir de todos modos?',
+ 'Green = start · Pink = finish':'Verde = inicio · Rosa = final',
+ 'GPS points. Breaks represent pauses or interrupted GPS.':'puntos GPS. Los cortes representan pausas o interrupciones de GPS.',
+ 'N ↑ · GPS outline (not a street map)':'N ↑ · Trazado GPS (no es un mapa de calles)',
+ 'Selected Ghost':'Ghost seleccionado','Riding':'Pedaleando','Elapsed':'Transcurrido','Average speed':'Velocidad promedio',
+ 'Elevation gain':'Desnivel acumulado','Distance':'Distancia','Avg':'Prom.','GPS points':'puntos GPS',
+ 'No GPS rides available':'No hay rodadas GPS disponibles',
+ 'Ghost Pace target calculated from this ride’s distance and riding time. Route replay is available above.':'Objetivo Ghost Pace calculado según la distancia y el tiempo pedaleando de esta rodada. La reproducción de ruta está arriba.',
+ 'This ride has no usable average speed, or you adjusted the target manually. Route replay is available above.':'Esta rodada no tiene velocidad promedio utilizable o ajustaste el objetivo manualmente. La reproducción de ruta está arriba.',
+ 'Level with Ghost':'Al nivel de Ghost','ahead':'adelante','behind':'atrás','level':'igual','Paused':'Pausado',
+ 'Manually paused':'Pausa manual','You:':'Tú:','Target':'Objetivo','Route matched':'Ruta coincidente',
+ 'GPS route outline, north is up':'Trazado de ruta GPS, norte arriba',
+ 'Offline GPS route comparison':'Comparación de rutas GPS sin conexión','Linear distance comparison':'Comparación lineal de distancia',
+ 'Hold on a second…':'Un momento…','Keep Ride':'Conservar','Delete Ride':'Eliminar'
+ };
+ const patterns=[
+ [/^([\d.]+\s(?:km|mi)) · Avg (.*?) · Riding (.*?) · (\d+) GPS points$/,'$1 · Prom. $2 · Pedaleando $3 · $4 puntos GPS'],
+ [/^Distance (.*?) · Average speed (.*?) · Riding (.*?) · Elapsed (.*?) · Elevation gain (.*?)$/,'Distancia $1 · Velocidad promedio $2 · Pedaleando $3 · Transcurrido $4 · Desnivel acumulado $5'],
+ [/^Selected Ghost · (.*?) · (.*?) · Riding (.*?)$/,'Ghost seleccionado · $1 · $2 · Pedaleando $3'],
+ [/^Green = start · Pink = finish · (\d+) GPS points\. Breaks represent pauses or interrupted GPS\.$/,'Verde = inicio · Rosa = final · $1 puntos GPS. Los cortes representan pausas o interrupciones de GPS.'],
+ [/^Follow my position: (ON|OFF)$/,(m,v)=>'Seguir mi posición: '+(v==='ON'?'SÍ':'NO')],
+ [/^Recording ride · GPS status: (.*)$/,'Grabando rodada · Estado GPS: $1'],
+ [/^Route matched · (.*) · You (.*?) \/ Ghost (.*?)$/,'Ruta coincidente · $1 · Tú $2 / Ghost $3'],
+ [/^([\d:.]+) (ahead|behind)$/,(m,n,d)=>n+' '+(d==='ahead'?'adelante':'atrás')],
+ [/^You: (.*?) · Ghost: (.*?) · (.*?) · Target (.*?)$/,'Tú: $1 · Ghost: $2 · $3 · Objetivo $4'],
+ [/^You: (.*?) · Ghost: (.*?) · (.*?) · Target (.*?) · Manually paused$/,'Tú: $1 · Ghost: $2 · $3 · Objetivo $4 · Pausa manual'],
+ [/^GPS: (.*)$/,'GPS: $1']
+ ];
+ const originals=new WeakMap();
+ let lang='en';
+ function translate(value){
+  if(dictionary[value])return dictionary[value];
+  for(const [re,replacement] of patterns){if(re.test(value))return value.replace(re,replacement);}
+  return value;
+ }
+ function processText(node){
+  if(!node.parentElement||node.parentElement.closest('script,style'))return;
+  const current=node.nodeValue;
+  if(!current.trim())return;
+  const prev=originals.get(node);
+  const english=(prev&&current===prev.spanish)?prev.english:current;
+  const leading=english.match(/^\s*/)[0],trailing=english.match(/\s*$/)[0],core=english.trim();
+  const spanish=leading+translate(core)+trailing;
+  originals.set(node,{english,spanish});
+  const next=lang==='es'?spanish:english;
+  if(current!==next)node.nodeValue=next;
+ }
+ function walk(root){
+  if(root.nodeType===3){processText(root);return;}
+  if(root.nodeType!==1)return;
+  if(root.matches('script,style'))return;
+  const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
+  let node;while(node=walker.nextNode())processText(node);
+  if(root.matches('[aria-label]'))translateAttribute(root);
+  root.querySelectorAll('[aria-label]').forEach(translateAttribute);
+ }
+ const attributes=new WeakMap();
+ function translateAttribute(el){
+  const current=el.getAttribute('aria-label');if(!current)return;
+  const prev=attributes.get(el);
+  const english=prev&&current===prev.spanish?prev.english:current;
+  const spanish=translate(english);
+  attributes.set(el,{english,spanish});
+  const next=lang==='es'?spanish:english;
+  if(next!==current)el.setAttribute('aria-label',next);
+ }
+ function refresh(){
+  document.documentElement.lang=lang;
+  document.getElementById('moveLanguage').textContent=lang==='es'?'ESP':'ENG';
+  walk(document.body);
+ }
+ // Track DOM changes caused by the original app's rendering, not GPS behavior.
+ let pending=false;
+ const observer=new MutationObserver(()=>{
+  if(pending)return;pending=true;
+  queueMicrotask(()=>{pending=false;refresh();});
+ });
+ function setLanguage(next){
+  lang=next;
+  try{localStorage.setItem('move_ui_language',next);}catch(e){}
+  refresh();
+ }
+ lang=moveDeleteLanguage();
+ document.getElementById('moveLanguage').addEventListener('click',()=>setLanguage(lang==='es'?'en':'es'));
+ refresh();
+ observer.observe(document.body,{subtree:true,childList:true,characterData:true});
+ // Alerts and native confirmations use the same language as the visible UI.
+ const nativeAlert=window.alert.bind(window),nativeConfirm=window.confirm.bind(window);
+ window.alert=message=>nativeAlert(lang==='es'?translate(String(message)):message);
+ window.confirm=message=>nativeConfirm(lang==='es'?translate(String(message)):message);
+})();
 </script>
 
 <script>
