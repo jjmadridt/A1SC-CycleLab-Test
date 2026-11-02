@@ -256,6 +256,8 @@ const MPH=0.6213711922;
 // Ride screen only: translate visible copy without changing recording logic.
 const MOVE_RIDE_ES = moveDeleteLanguage() === "es";
 const rideText = (english, spanish) => MOVE_RIDE_ES ? spanish : english;
+const historyText = rideText;
+const historyDate = value => new Date(value).toLocaleString(MOVE_RIDE_ES ? "es-MX" : undefined);
 function translateRideStatic(){
  const ride = $("ride");
  const translations = new Map([
@@ -803,28 +805,37 @@ function historyAverageSpeed(ride){
   (units==="metric"?" km/h":" mph");
 }
 
+function translateHistoryStatic(){
+ if(!MOVE_RIDE_ES)return;
+ const section=$("history");
+ section.querySelector("h1").textContent="Historial de rodadas";
+ section.querySelector("p.note").textContent="Las rodadas finalizadas se guardan únicamente en este dispositivo y navegador. Exporta archivos GPX para conservar copias de respaldo.";
+ const nav=document.querySelector('[data-page="history"]');
+ if(nav)nav.textContent="Historial";
+}
+
 function renderHistory(){
  const rides=readRides();
  const list=$("historyList");
  const detail=$("rideDetail");
  list.replaceChildren();
  if(!rides.length){
-  list.textContent="No finished rides saved yet. Start and finish a test ride to create one.";
+  list.textContent=historyText("No finished rides saved yet. Start and finish a test ride to create one.","Aún no hay rodadas guardadas. Inicia y finaliza una rodada de prueba para crear una.");
   detail.classList.add("hidden");
   return;
  }
  rides.forEach(ride=>{
   const b=document.createElement("button");
   b.className="historyItem";
-  const date=new Date(ride.start).toLocaleString();
+  const date=historyDate(ride.start);
   const dist=(ride.distanceM/1000*(units==="metric"?1:MPH)).toFixed(2);
   b.innerHTML='<strong></strong><br><small></small>';
   b.querySelector('strong').textContent=date;
   b.querySelector('small').textContent=
    dist+(units==="metric"?" km":" mi")+
-   " · Avg "+historyAverageSpeed(ride)+
-   " · Riding "+fmt(ride.ridingMs)+
-   " · "+ride.route.length+" GPS points";
+   historyText(" · Avg "," · Prom. ")+historyAverageSpeed(ride)+
+   historyText(" · Riding "," · En movimiento ")+fmt(ride.ridingMs)+
+   " · "+ride.route.length+historyText(" GPS points"," puntos GPS");
   b.onclick=()=>{
    selectedRideId=ride.id;
    renderHistoryDetail(ride);
@@ -841,17 +852,17 @@ function renderHistoryDetail(ride){
  detail.classList.remove("hidden");
  detail.replaceChildren();
  const title=document.createElement("h2");
- title.textContent=new Date(ride.start).toLocaleString();
+ title.textContent=historyDate(ride.start);
  detail.appendChild(title);
  const stats=document.createElement("p");
  stats.className="note";
  const dist=(ride.distanceM/1000*(units==="metric"?1:MPH)).toFixed(2);
  stats.textContent=
-  "Distance "+dist+(units==="metric"?" km":" mi")+
-  " · Average speed "+historyAverageSpeed(ride)+
-  " · Riding "+fmt(ride.ridingMs)+
-  " · Elapsed "+fmt(ride.end-ride.start)+
-  " · Elevation gain "+Math.round(ride.gainM)+" m";
+  historyText("Distance ","Distancia ")+dist+(units==="metric"?" km":" mi")+
+  historyText(" · Average speed "," · Velocidad promedio ")+historyAverageSpeed(ride)+
+  historyText(" · Riding "," · En movimiento ")+fmt(ride.ridingMs)+
+  historyText(" · Elapsed "," · Tiempo total ")+fmt(ride.end-ride.start)+
+  historyText(" · Elevation gain "," · Desnivel positivo ")+Math.round(ride.gainM)+" m";
  detail.appendChild(stats);
  const map=document.createElement("div");
  map.innerHTML=routeSVG(ride.route);
@@ -859,10 +870,10 @@ function renderHistoryDetail(ride){
  const actions=document.createElement("div");
  actions.className="historyActions";
  const exportBtn=document.createElement("button");
- exportBtn.textContent="Export GPX";
+ exportBtn.textContent=historyText("Export GPX","Exportar GPX");
  exportBtn.onclick=()=>exportGPX(ride);
  const deleteBtn=document.createElement("button");
- deleteBtn.textContent="Delete ride";
+ deleteBtn.textContent=historyText("Delete ride","Eliminar rodada");
  deleteBtn.onclick=()=>confirmMoveRideDelete(()=>{
   try{
    localStorage.setItem(STORE_KEY,JSON.stringify(
@@ -871,7 +882,7 @@ function renderHistoryDetail(ride){
    selectedRideId=null;
    renderHistory();
   }catch(e){
-   alert("Unable to delete ride from browser storage.");
+   alert(historyText("Unable to delete ride from browser storage.","No se pudo eliminar la rodada del almacenamiento del navegador."));
   }
  });
  actions.append(exportBtn,deleteBtn);
@@ -1226,6 +1237,7 @@ document.querySelectorAll("[data-page]").forEach(btn=>{
  };
 });
 translateRideStatic();
+translateHistoryStatic();
 if(MOVE_RIDE_ES) $("message").textContent="GPS inactivo. Pulsa Iniciar rodada.";
 render();
 renderHistory();
