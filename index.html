@@ -257,6 +257,7 @@ const MPH=0.6213711922;
 const MOVE_RIDE_ES = moveDeleteLanguage() === "es";
 const rideText = (english, spanish) => MOVE_RIDE_ES ? spanish : english;
 const historyText = rideText;
+const ghostText = rideText;
 const historyDate = value => new Date(value).toLocaleString(MOVE_RIDE_ES ? "es-MX" : undefined);
 function translateRideStatic(){
  const ride = $("ride");
@@ -544,20 +545,39 @@ $("ghostTarget").addEventListener("change",()=>{
  renderGhost();
 });
 
+function translateGhostStatic(){
+ if(!MOVE_RIDE_ES)return;
+ const section=$("partner");
+ const labels={
+  "GHOST ROUTE · BLUE = YOU · PINK = GHOST":"RUTA GHOST · AZUL = TÚ · ROSA = GHOST",
+  "REFERENCE RIDE":"RODADA DE REFERENCIA",
+  "Reference ride details":"Detalles de la rodada de referencia",
+  "Start Ride":"Iniciar rodada",
+  "Pause":"Pausar",
+  "Finish":"Finalizar",
+  "BLUE = YOU":"AZUL = TÚ",
+  "PINK = GHOST":"ROSA = GHOST"
+ };
+ section.querySelectorAll(".label,summary,button,svg text").forEach(el=>{
+  const key=el.textContent.trim();
+  if(labels[key])el.textContent=labels[key];
+ });
+ document.querySelector('[data-page="partner"]').textContent="Ghost";
+}
 function updateGhostTargetLabel(){
  const factor=units==="metric"?1:MPH;
  $("ghostTarget").value=String(Number((ghostTargetKmh*factor).toFixed(1)));
  $("ghostTarget").min=units==="metric"?"1":"0.6";
  $("ghostTarget").max=units==="metric"?"80":"49.7";
  $("ghostTarget").step=units==="metric"?"0.5":"0.5";
- $("ghostTargetLabel").textContent="GHOST TARGET SPEED ("+(units==="metric"?"km/h":"mph")+")";
+ $("ghostTargetLabel").textContent=ghostText("GHOST TARGET SPEED","VELOCIDAD OBJETIVO GHOST")+" ("+(units==="metric"?"km/h":"mph")+")";
  $("ghostMetricBtn").classList.toggle("active",units==="metric");
  $("ghostImperialBtn").classList.toggle("active",units==="imperial");
  $("ghostTargetSource").textContent=ghostTargetMode==="reference"?
-  "Calculated from selected ride · Tap to override":
+  ghostText("Calculated from selected ride · Tap to override","Calculada de la rodada seleccionada · Toca para cambiar"):
   ghostTargetMode==="override"?
-  "Manual override for selected ride · original ride unchanged":
-  "Manual target · saved for future rides";
+  ghostText("Manual override for selected ride · original ride unchanged","Ajuste manual · la rodada original no cambia"):
+  ghostText("Manual target · saved for future rides","Objetivo manual · guardado para próximas rodadas");
 }
 
 function syncGhostTarget(){
@@ -587,13 +607,13 @@ function renderGhostPace(){
  $("ghostYouDot").setAttribute("cx",xpos(youKm).toFixed(1));
  $("ghostTargetDot").setAttribute("cx",xpos(ghostKm).toFixed(1));
  $("ghostAxis").textContent="0 – "+(maxKm*factor).toFixed(1)+" "+suffix;
- if(!active){$("ghostStats").textContent="Preview only · Start Ride to compare your progress.";return;}
+ if(!active){$("ghostStats").textContent=ghostText("Preview only · Start Ride to compare your progress.","Vista previa · Inicia una rodada para comparar tu avance.");return;}
  const difference=youKm-ghostKm;
  const gapText=Math.abs(difference)<.005?"Level with Ghost":
   (Math.abs(difference)*factor).toFixed(2)+" "+suffix+" "+(difference>0?"ahead":"behind");
  $("ghostStats").textContent=
-  "You: "+(youKm*factor).toFixed(2)+" "+suffix+" · Ghost: "+(ghostKm*factor).toFixed(2)+
-  " "+suffix+" · "+gapText+" · Target "+(ghostTargetKmh*factor).toFixed(1)+(units==="metric"?" km/h":" mph")+
+  ghostText("You: ","Tú: ")+(youKm*factor).toFixed(2)+" "+suffix+" · Ghost: "+(ghostKm*factor).toFixed(2)+
+  " "+suffix+" · "+gapText+ghostText(" · Target "," · Objetivo ")+(ghostTargetKmh*factor).toFixed(1)+(units==="metric"?" km/h":" mph")+
   (state==="paused"?" · Manually paused":"");
 }
 
@@ -691,8 +711,8 @@ function renderGhostRoute(){
  const points=ghostValidPoints(ride);
  const mapEl=$('ghostRouteMap'),fallback=$('ghostRouteFallback'),status=$('ghostRouteStatus');
  if(points.length<2){
-  mapEl.classList.add('hidden');fallback.textContent='Select a ride with at least two GPS points.';
-  status.textContent='Ghost Pace remains available.';return;
+  mapEl.classList.add('hidden');fallback.textContent=ghostText("Select a ride with at least two GPS points.","Selecciona una rodada con al menos dos puntos GPS.");
+  status.textContent=ghostText("Ghost Pace remains available.","El ritmo Ghost sigue disponible.");return;
  }
  const active=state==='riding'||state==='paused';
  const elapsed=active?Math.max(0,Date.now()-startedAt):0;
@@ -700,17 +720,17 @@ function renderGhostRoute(){
  const live=active&&route.length?route[route.length-1]:null;
  const nearStart=live&&route.length&&ghostDist(route[0],points[0])<=150;
  const match=nearStart?ghostMatchPosition(points,live):null;
- let routeStatus='Preview only · Start Ride near the saved route’s starting point.';
+ let routeStatus=ghostText(ghostText("Preview only · Start Ride near the saved route’s starting point.","Vista previa · Inicia cerca del punto de salida de la ruta guardada."),"Vista previa · Inicia cerca del punto de salida de la ruta guardada.");
  if(active){
-  if(!live)routeStatus='Recording · Waiting for your live GPS position.';
-  else if(!nearStart)routeStatus='Route not matched · Your ride started over 150 m from the saved start. Pace mode still works.';
-  else if(!match)routeStatus='Off reference route (over 40 m) · Time comparison suspended.';
+  if(!live)routeStatus=ghostText(ghostText("Recording · Waiting for your live GPS position.","Grabando · Esperando tu posición GPS."),"Grabando · Esperando tu posición GPS.");
+  else if(!nearStart)routeStatus=ghostText(ghostText("Route not matched · Your ride started over 150 m from the saved start. Pace mode still works.","Ruta sin coincidencia · Iniciaste a más de 150 m del punto de salida. El modo ritmo sigue funcionando."),"Ruta sin coincidencia · Iniciaste a más de 150 m del punto de salida. El modo ritmo sigue funcionando.");
+  else if(!match)routeStatus=ghostText(ghostText("Off reference route (over 40 m) · Time comparison suspended.","Fuera de la ruta de referencia (más de 40 m) · Comparación de tiempo suspendida."),"Fuera de la ruta de referencia (más de 40 m) · Comparación de tiempo suspendida.");
   else{
    const gap=elapsed-match.refMs;
-   const lead=gap<0?'ahead':gap>0?'behind':'level';
-   routeStatus='Route matched · '+(Math.abs(gap)<1000?'Level with Ghost':fmt(Math.abs(gap))+' '+lead)+
-    ' · You '+(match.dist/1000).toFixed(2)+' km / Ghost '+(ghostReferenceDistance(points,elapsed)/1000).toFixed(2)+' km';
-   if(state==='paused')routeStatus+=' · Paused';
+   const lead=gap<0?ghostText(ghostText("ahead","adelante"),"adelante"):gap>0?ghostText(ghostText("behind","atrás"),"atrás"):ghostText(ghostText("level","al mismo nivel"),"al mismo nivel");
+   routeStatus=ghostText(ghostText("Route matched · ","Ruta coincidente · "),"Ruta coincidente · ")+(Math.abs(gap)<1000?ghostText(ghostText("Level with Ghost","Al nivel de Ghost"),"Al nivel de Ghost"):fmt(Math.abs(gap))+' '+lead)+
+    ghostText(ghostText(" · You "," · Tú ")," · Tú ")+(match.dist/1000).toFixed(2)+' km / Ghost '+(ghostReferenceDistance(points,elapsed)/1000).toFixed(2)+' km';
+   if(state==='paused')routeStatus+=ghostText(ghostText(" · Paused"," · En pausa")," · En pausa");
   }
  }
  status.textContent=routeStatus;
@@ -739,7 +759,7 @@ function renderGhostRoute(){
   fallback.innerHTML=ghostOfflineSvg(points,ghost,userPoint);
  }
 }
-$('ghostFollow').onclick=()=>{ghostFollow=!ghostFollow;$('ghostFollow').textContent='Follow my position: '+(ghostFollow?'ON':'OFF');renderGhostRoute()};
+$('ghostFollow').onclick=()=>{ghostFollow=!ghostFollow;$('ghostFollow').textContent=ghostText(ghostText("Follow my position: ","Seguir mi posición: "),"Seguir mi posición: ")+(ghostFollow?'ON':'OFF');renderGhostRoute()};
 
 function renderGhost(){
  const select=$("ghostRideSelect"), preview=$("ghostPreview");
@@ -748,7 +768,7 @@ function renderGhost(){
  select.replaceChildren();
  const placeholder=document.createElement("option");
  placeholder.value="";
- placeholder.textContent=rides.length?"Choose a saved GPS ride":"No GPS rides available";
+ placeholder.textContent=rides.length?ghostText("Choose a saved GPS ride","Selecciona una rodada GPS guardada"):ghostText("No GPS rides available","No hay rodadas GPS disponibles");
  select.appendChild(placeholder);
  rides.forEach(ride=>{
   const option=document.createElement("option");
@@ -762,14 +782,14 @@ function renderGhost(){
  const ride=rides.find(r=>r.id===ghostRideId);
  if(!ride){
   renderGhostRoute();
-  preview.textContent=rides.length?"No reference selected. Ghost Pace works without one.":
-   "No saved GPS route yet. Ghost Pace is ready without one.";
+  preview.textContent=rides.length?ghostText("No reference selected. Ghost Pace works without one.","Sin referencia seleccionada. El ritmo Ghost funciona sin ella."):
+   ghostText("No saved GPS route yet. Ghost Pace is ready without one.","Aún no hay rutas GPS guardadas. El ritmo Ghost está disponible.");
   return;
  }
  preview.replaceChildren();
  const details=document.createElement("p");
  details.className="note";
- details.textContent="Selected Ghost · "+new Date(ride.start).toLocaleString()+
+ details.textContent=ghostText("Selected Ghost · ","Ghost seleccionado · ")+new Date(ride.start).toLocaleString()+
   " · "+(ride.distanceM/1000).toFixed(2)+" km · Riding "+fmt(ride.ridingMs);
  preview.appendChild(details);
  const outline=document.createElement("div");
@@ -778,8 +798,8 @@ function renderGhost(){
  const info=document.createElement("p");
  info.className="note";
  info.textContent=ghostTargetMode==="reference"?
-  "Ghost Pace target calculated from this ride’s distance and riding time. Route replay is available above.":
-  "This ride has no usable average speed, or you adjusted the target manually. Route replay is available above.";
+  ghostText("Ghost Pace target calculated from this ride’s distance and riding time. Route replay is available above.","Objetivo Ghost calculado con la distancia y el tiempo pedaleado. Puedes ver la ruta arriba."):
+  ghostText("This ride has no usable average speed, or you adjusted the target manually. Route replay is available above.","Esta rodada no tiene velocidad promedio utilizable, o ajustaste el objetivo manualmente. Puedes ver la ruta arriba.");
  preview.appendChild(info);
  renderGhostRoute();
 }
@@ -933,11 +953,11 @@ function render(){
   $("finish").textContent=rideText("Finish","Finalizar");
  $("ghostStart").disabled=$("control").disabled;
  $("ghostPause").disabled=$("pause").disabled;
- $("ghostPause").textContent=state==="paused"?"Resume":"Pause";
+ $("ghostPause").textContent=state==="paused"?ghostText("Resume","Reanudar"):ghostText("Pause","Pausar");
  $("ghostFinish").disabled=$("finish").disabled;
- $("ghostRideStatus").textContent=state==="riding"?"Recording ride · GPS status: "+$("status").textContent:
-  state==="paused"?"Manually paused · elapsed time continues":
-  state==="finished"?$("message").textContent:"Ready to record a ride.";
+ $("ghostRideStatus").textContent=state==="riding"?ghostText("Recording ride · GPS status: ","Grabando rodada · Estado GPS: ")+$("status").textContent:
+  state==="paused"?ghostText("Manually paused · elapsed time continues","Pausa manual · el tiempo total sigue avanzando"):
+  state==="finished"?$("message").textContent:ghostText("Ready to record a ride.","Listo para grabar una rodada.");
 }
 
 $("metricBtn").onclick=()=>{
@@ -1238,6 +1258,7 @@ document.querySelectorAll("[data-page]").forEach(btn=>{
 });
 translateRideStatic();
 translateHistoryStatic();
+translateGhostStatic();
 if(MOVE_RIDE_ES) $("message").textContent="GPS inactivo. Pulsa Iniciar rodada.";
 render();
 renderHistory();
