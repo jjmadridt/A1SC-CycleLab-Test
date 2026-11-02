@@ -1259,6 +1259,12 @@ document.querySelectorAll("[data-page]").forEach(btn=>{
 translateRideStatic();
 translateHistoryStatic();
 translateGhostStatic();
+// Return is currently informational only; translate its existing copy.
+if(MOVE_RIDE_ES){
+ const returnSection=$('return');
+ returnSection.querySelector('h1').textContent='Regresar al origen';
+ returnSection.querySelector('.panel').textContent='La navegación de regreso estará disponible cuando la grabación de rutas sea confiable.';
+}
 if(MOVE_RIDE_ES) $("message").textContent="GPS inactivo. Pulsa Iniciar rodada.";
 render();
 renderHistory();
