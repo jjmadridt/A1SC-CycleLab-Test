@@ -161,7 +161,7 @@ button:disabled{opacity:.4}
 </div>
 <div class="metric">
 <div class="label">ELEVATION GAIN</div>
-<div class="value"><span id="elevation">0</span> <span class="smallunit">m</span></div>
+<div class="value"><span id="elevation">0</span> <span class="smallunit" id="elevationUnit">m</span></div>
 </div>
 <div class="metric">
 <div class="label">DISTANCE</div>
@@ -882,7 +882,7 @@ function renderHistoryDetail(ride){
   historyText(" · Average speed "," · Velocidad promedio ")+historyAverageSpeed(ride)+
   historyText(" · Riding "," · En movimiento ")+fmt(ride.ridingMs)+
   historyText(" · Elapsed "," · Tiempo total ")+fmt(ride.end-ride.start)+
-  historyText(" · Elevation gain "," · Desnivel positivo ")+Math.round(ride.gainM)+" m";
+  historyText(" · Elevation gain "," · Desnivel positivo ")+Math.round((Number(ride.gainM)||0)*(units==="metric"?1:3.280839895))+ (units==="metric"?" m":" ft");
  detail.appendChild(stats);
  const map=document.createElement("div");
  map.innerHTML=routeSVG(ride.route);
@@ -936,7 +936,8 @@ function render(){
  $("average").textContent=ridingMs>0?
  (distanceM/(ridingMs/1000)*3.6*factor).toFixed(1):"0.0";
  $("distance").textContent=(distanceM/1000*factor).toFixed(2);
- $("elevation").textContent=Math.round(gainM);
+ $("elevation").textContent=Math.round(gainM*(units==="metric"?1:3.280839895));
+ $("elevationUnit").textContent=units==="metric"?"m":"ft";
  $("speedUnit").textContent=units==="metric"?"km/h":"mph";
  $("avgUnit").textContent=units==="metric"?"km/h":"mph";
  $("distanceUnit").textContent=units==="metric"?"km":"mi";
